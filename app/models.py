@@ -20,10 +20,10 @@ class ExamResult(models.Model):
     division0 = models.IntegerField(default=0)  # Division 0 (fail/absent)
 
     total = models.IntegerField(default=0)
-    average_score = models.FloatField(default=0.0)
+    gpa = models.FloatField(default=0.0)  # Lower is better (closer to 1.0 is best)
 
     class Meta:
         unique_together = ("school", "exam", "year")
 
     def __str__(self):
-        return f"{self.school.name} ({self.exam} {self.year})"
+        return f"{self.school.name} ({self.exam} {self.year}) - GPA: {self.gpa:.2f}"

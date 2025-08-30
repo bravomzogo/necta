@@ -14,6 +14,30 @@ class Command(BaseCommand):
         parser.add_argument("--exam", type=str, required=True, help="Exam type: CSEE or ACSEE")
         parser.add_argument("--year", type=int, required=True, help="Exam year (e.g. 2023)")
 
+    def calculate_gpa(self, div_counts):
+        """
+        Calculate GPA based on NECTA division system
+        Division I = 1.0 point (best)
+        Division II = 2.0 points
+        Division III = 3.0 points
+        Division IV = 4.0 points (worst)
+        Division 0 = 4.0 points (failures count as worst)
+        """
+        total_students = sum(div_counts.values())
+        
+        if total_students == 0:
+            return 4.0  # Worst possible GPA if no students
+        
+        total_points = (
+            div_counts["I"] * 1.0 +    # Division I = 1.0 (best)
+            div_counts["II"] * 2.0 +   # Division II = 2.0
+            div_counts["III"] * 3.0 +  # Division III = 3.0
+            div_counts["IV"] * 4.0 +   # Division IV = 4.0 (worst)
+            div_counts["0"] * 4.0      # Division 0 = 4.0 (failures)
+        )
+        
+        return round(total_points / total_students, 2)
+
     def parse_division_summary(self, soup):
         """Parse the division performance summary table from the results page"""
         div_counts = {"I": 0, "II": 0, "III": 0, "IV": 0, "0": 0}
@@ -152,8 +176,8 @@ class Command(BaseCommand):
             else:
                 code, name = parts[0], parts[1]
 
-            # Skip index files
-            if 'index' in code.lower():
+            # Skip index files and non-S schools
+            if 'index' in code.lower() or not code.startswith('S'):
                 continue
 
             # Fetch school page
@@ -170,10 +194,7 @@ class Command(BaseCommand):
             div_counts = self.parse_division_summary(ssoup)
             
             total = sum(div_counts.values()) or 1
-            avg_score = (
-                (div_counts["I"] * 4 + div_counts["II"] * 3 +
-                 div_counts["III"] * 2 + div_counts["IV"] * 1) / total
-            ) if total > 0 else 0
+            gpa = self.calculate_gpa(div_counts)
 
             school, _ = School.objects.get_or_create(code=code, defaults={"name": name})
             ExamResult.objects.update_or_create(
@@ -187,10 +208,10 @@ class Command(BaseCommand):
                     "division4": div_counts["IV"],
                     "division0": div_counts["0"],
                     "total": total,
-                    "average_score": avg_score,
+                    "gpa": gpa,
                 },
             )
 
-            self.stdout.write(f" → {code} {name} (Div I: {div_counts['I']}, II: {div_counts['II']}, III: {div_counts['III']}, IV: {div_counts['IV']}, 0: {div_counts['0']}, Total: {total}, Avg: {avg_score:.2f})")
+            self.stdout.write(f" → {code} {name} (Div I: {div_counts['I']}, II: {div_counts['II']}, III: {div_counts['III']}, IV: {div_counts['IV']}, 0: {div_counts['0']}, Total: {total}, GPA: {gpa:.2f})")
 
         self.stdout.write(self.style.SUCCESS("✅ Scraping finished."))

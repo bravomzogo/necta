@@ -1,4 +1,3 @@
-# app/views.py
 from django.shortcuts import render
 from django.db.models import Sum, Avg, Count, Q
 from .models import ExamResult
@@ -11,11 +10,11 @@ def school_rankings(request, exam_type, year):
     total_schools = results.count()
     total_students = results.aggregate(total=Sum('total'))['total'] or 0
     
-    # Only calculate average if we have schools with valid scores
-    valid_results = results.exclude(average_score=0)
-    avg_score_all = valid_results.aggregate(avg=Avg('average_score'))['avg'] or 0 if valid_results.exists() else 0
+    # Only calculate average if we have schools with valid GPAs
+    valid_results = results.exclude(gpa=0)
+    avg_gpa_all = valid_results.aggregate(avg=Avg('gpa'))['avg'] or 0 if valid_results.exists() else 0
     
-    top_score = results.first().average_score if results else 0
+    best_gpa = results.first().gpa if results else 0
     
     # Division totals
     division_totals = results.aggregate(
@@ -26,12 +25,12 @@ def school_rankings(request, exam_type, year):
         div0=Sum('division0')
     )
     
-    # Performance distribution - ensure we handle cases where average_score might be None
-    score_ranges = {
-        '0_1': results.filter(average_score__gte=0, average_score__lt=1).count(),
-        '1_2': results.filter(average_score__gte=1, average_score__lt=2).count(),
-        '2_3': results.filter(average_score__gte=2, average_score__lt=3).count(),
-        '3_4': results.filter(average_score__gte=3, average_score__lte=4).count(),
+    # GPA distribution - NECTA: lower GPAs are better (1.0-2.0 is excellent)
+    gpa_ranges = {
+        '1_2': results.filter(gpa__gte=1.0, gpa__lt=2.0).count(),
+        '2_3': results.filter(gpa__gte=2.0, gpa__lt=3.0).count(),
+        '3_4': results.filter(gpa__gte=3.0, gpa__lt=4.0).count(),
+        '4_plus': results.filter(gpa__gte=4.0).count(),
     }
     
     context = {
@@ -40,17 +39,17 @@ def school_rankings(request, exam_type, year):
         'year': year,
         'total_schools': total_schools,
         'total_students': total_students,
-        'avg_score_all': avg_score_all,
-        'top_score': top_score,
+        'avg_gpa_all': round(avg_gpa_all, 2),
+        'best_gpa': best_gpa,
         'division1_total': division_totals['div1'] or 0,
         'division2_total': division_totals['div2'] or 0,
         'division3_total': division_totals['div3'] or 0,
         'division4_total': division_totals['div4'] or 0,
         'division0_total': division_totals['div0'] or 0,
-        'score_0_1': score_ranges['0_1'],
-        'score_1_2': score_ranges['1_2'],
-        'score_2_3': score_ranges['2_3'],
-        'score_3_4': score_ranges['3_4'],
+        'gpa_1_2': gpa_ranges['1_2'],
+        'gpa_2_3': gpa_ranges['2_3'],
+        'gpa_3_4': gpa_ranges['3_4'],
+        'gpa_4_plus': gpa_ranges['4_plus'],
     }
     
     return render(request, "rankings.html", context)

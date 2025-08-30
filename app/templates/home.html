@@ -1,4 +1,3 @@
-<!-- app/templates/home.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,42 +7,177 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-            --light: #ecf0f1;
-            --dark: #2c3e50;
-            --success: #27ae60;
-            --warning: #f39c12;
-            --text: #333;
-            --text-light: #7f8c8d;
+            --primary: #1a237e;
+            --primary-light: #534bae;
+            --primary-dark: #000051;
+            --secondary: #00bcd4;
+            --secondary-light: #62efff;
+            --secondary-dark: #008ba3;
+            --accent: #ff4081;
+            --light: #f5f5f7;
+            --dark: #121212;
+            --success: #00c853;
+            --warning: #ffab00;
+            --text: #212121;
+            --text-light: #757575;
+            --card-bg: rgba(255, 255, 255, 0.92);
         }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: var(--text);
             line-height: 1.6;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
+            background: linear-gradient(-45deg, #1a237e, #311b92, #006064, #00897b);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Animated background elements */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .bg-bubbles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .bg-bubbles li {
+            position: absolute;
+            list-style: none;
+            display: block;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.15);
+            bottom: -160px;
+            border-radius: 50%;
+            animation: square 25s infinite;
+            transition-timing-function: linear;
+        }
+        
+        .bg-bubbles li:nth-child(1) {
+            left: 10%;
+            animation-delay: 0s;
+            width: 80px;
+            height: 80px;
+        }
+        
+        .bg-bubbles li:nth-child(2) {
+            left: 20%;
+            animation-delay: 2s;
+            animation-duration: 17s;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .bg-bubbles li:nth-child(3) {
+            left: 25%;
+            animation-delay: 4s;
+            width: 120px;
+            height: 120px;
+        }
+        
+        .bg-bubbles li:nth-child(4) {
+            left: 40%;
+            animation-delay: 0s;
+            animation-duration: 22s;
+            width: 160px;
+            height: 160px;
+        }
+        
+        .bg-bubbles li:nth-child(5) {
+            left: 70%;
+            animation-delay: 3s;
+            width: 100px;
+            height: 100px;
+        }
+        
+        .bg-bubbles li:nth-child(6) {
+            left: 80%;
+            animation-delay: 2s;
+            width: 120px;
+            height: 120px;
+        }
+        
+        .bg-bubbles li:nth-child(7) {
+            left: 32%;
+            animation-delay: 6s;
+            width: 140px;
+            height: 140px;
+        }
+        
+        .bg-bubbles li:nth-child(8) {
+            left: 55%;
+            animation-delay: 8s;
+            animation-duration: 18s;
+            width: 40px;
+            height: 40px;
+        }
+        
+        .bg-bubbles li:nth-child(9) {
+            left: 25%;
+            animation-delay: 9s;
+            animation-duration: 20s;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .bg-bubbles li:nth-child(10) {
+            left: 90%;
+            animation-delay: 11s;
+            width: 160px;
+            height: 160px;
+        }
+        
+        @keyframes square {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+                border-radius: 50%;
+            }
+            100% {
+                transform: translateY(-1000px) rotate(720deg);
+                opacity: 0;
+                border-radius: 10%;
+            }
         }
         
         /* Header Styles */
         header {
-            background: var(--primary);
+            background: rgba(26, 35, 126, 0.85);
+            backdrop-filter: blur(10px);
             color: white;
             padding: 1rem 0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .header-container {
@@ -63,16 +197,17 @@
         
         .logo i {
             font-size: 2rem;
-            color: var(--secondary);
+            color: var(--secondary-light);
+            text-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
         }
         
         .logo h1 {
             font-size: 1.8rem;
             font-weight: 700;
-        }
-        
-        .logo span {
-            color: var(--secondary);
+            background: linear-gradient(to right, #fff, var(--secondary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
         
         nav ul {
@@ -85,13 +220,14 @@
             color: white;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.3s;
+            transition: all 0.3s;
             position: relative;
             padding: 0.5rem 0;
         }
         
         nav a:hover {
-            color: var(--secondary);
+            color: var(--secondary-light);
+            text-shadow: 0 0 8px rgba(98, 239, 255, 0.7);
         }
         
         nav a::after {
@@ -101,8 +237,9 @@
             left: 0;
             width: 0;
             height: 3px;
-            background: var(--secondary);
+            background: var(--secondary-light);
             transition: width 0.3s;
+            box-shadow: 0 0 8px var(--secondary-light);
         }
         
         nav a:hover::after {
@@ -113,28 +250,6 @@
         main {
             flex: 1;
             padding: 2rem 0;
-        }
-        
-        .hero {
-            text-align: center;
-            padding: 3rem 1rem;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
-            color: white;
-            border-radius: 0 0 20px 20px;
-            margin-bottom: 3rem;
-        }
-        
-        .hero h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            animation: fadeIn 1s ease-in;
-        }
-        
-        .hero p {
-            font-size: 1.2rem;
-            max-width: 800px;
-            margin: 0 auto 2rem;
-            opacity: 0.9;
         }
         
         .container {
@@ -151,14 +266,16 @@
         }
         
         .card {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            transition: transform 0.3s, box-shadow 0.3s;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
             text-align: center;
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .card::before {
@@ -168,18 +285,22 @@
             left: 0;
             width: 5px;
             height: 100%;
-            background: var(--secondary);
+            background: linear-gradient(to bottom, var(--secondary), var(--primary));
         }
         
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
         }
         
         .card i {
-            font-size: 3rem;
-            color: var(--secondary);
-            margin-bottom: 1rem;
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.1));
         }
         
         .card h3 {
@@ -191,106 +312,206 @@
         .card p {
             color: var(--text-light);
             margin-bottom: 1.5rem;
+            font-size: 0.95rem;
         }
         
         .btn {
             display: inline-block;
-            background: var(--secondary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
             color: white;
-            padding: 0.8rem 1.5rem;
+            padding: 0.8rem 1.8rem;
             border-radius: 50px;
             text-decoration: none;
             font-weight: 600;
             transition: all 0.3s;
-            border: 2px solid var(--secondary);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(26, 35, 126, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
         }
         
         .btn:hover {
-            background: transparent;
-            color: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(26, 35, 126, 0.6);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
         }
         
         .btn-outline {
             background: transparent;
-            color: var(--secondary);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            box-shadow: none;
         }
         
         .btn-outline:hover {
-            background: var(--secondary);
+            background: var(--primary);
             color: white;
         }
         
         .exam-selector {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
             margin-bottom: 3rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .exam-selector h2 {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
             color: var(--primary);
+            font-size: 2.2rem;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        .exam-selector h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-radius: 2px;
         }
         
         .exam-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
+            gap: 2rem;
         }
         
         .exam-card {
-            background: var(--light);
-            border-radius: 10px;
-            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 2rem;
             text-align: center;
-            transition: all 0.3s;
-            border-left: 4px solid var(--secondary);
+            transition: all 0.4s ease;
+            border-left: 5px solid var(--secondary);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .exam-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(26, 35, 126, 0.05) 0%, rgba(0, 188, 212, 0.05) 100%);
+            z-index: 0;
         }
         
         .exam-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid var(--accent);
         }
         
         .exam-card h3 {
             color: var(--primary);
             margin-bottom: 1rem;
+            font-size: 1.5rem;
+            position: relative;
+            z-index: 1;
         }
         
         .exam-card p {
             color: var(--text-light);
             margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
         }
         
         .stats-section {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-            padding: 3rem 0;
+            padding: 4rem 0;
             border-radius: 20px;
             margin-bottom: 3rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stats-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            transform: rotate(30deg);
         }
         
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
+            gap: 2.5rem;
             text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-item {
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
         }
         
         .stat-item h3 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             margin-bottom: 0.5rem;
-            color: var(--secondary);
+            color: var(--secondary-light);
+            text-shadow: 0 0 10px rgba(98, 239, 255, 0.7);
+        }
+        
+        .stat-item p {
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
         
         /* Footer Styles */
         footer {
             background: var(--dark);
             color: white;
-            padding: 3rem 0 1rem;
+            padding: 4rem 0 1.5rem;
             margin-top: auto;
+            position: relative;
         }
         
         .footer-content {
@@ -299,14 +520,17 @@
             padding: 0 20px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
+            gap: 3rem;
+            position: relative;
+            z-index: 1;
         }
         
         .footer-section h3 {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             margin-bottom: 1.5rem;
             position: relative;
-            padding-bottom: 0.5rem;
+            padding-bottom: 0.8rem;
+            color: var(--secondary-light);
         }
         
         .footer-section h3::after {
@@ -315,8 +539,9 @@
             bottom: 0;
             left: 0;
             width: 50px;
-            height: 2px;
+            height: 3px;
             background: var(--secondary);
+            border-radius: 3px;
         }
         
         .footer-links {
@@ -325,16 +550,24 @@
         
         .footer-links li {
             margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .footer-links i {
+            color: var(--secondary);
         }
         
         .footer-links a {
             color: #ccc;
             text-decoration: none;
-            transition: color 0.3s;
+            transition: all 0.3s;
         }
         
         .footer-links a:hover {
-            color: var(--secondary);
+            color: var(--secondary-light);
+            padding-left: 5px;
         }
         
         .social-icons {
@@ -347,9 +580,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.1);
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             color: white;
             transition: all 0.3s;
@@ -357,24 +590,103 @@
         
         .social-icons a:hover {
             background: var(--secondary);
-            transform: translateY(-3px);
+            transform: translateY(-5px) rotate(10deg);
+            box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
         }
         
         .footer-bottom {
             text-align: center;
-            padding-top: 2rem;
-            margin-top: 2rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 3rem;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Signature Styles */
+        .signature {
+            font-family: 'Brush Script MT', cursive;
+            font-size: 3.5rem;
+            background: linear-gradient(to right, #ff9a9e, #fad0c4, #a18cd1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+            margin: 20px 0;
+            padding: 10px;
+            display: inline-block;
+            position: relative;
+            font-weight: bold;
+        }
+        
+        .signature::before, .signature::after {
+            content: "";
+            position: absolute;
+            height: 3px;
+            width: 50px;
+            background: linear-gradient(to right, transparent, #ff6b6b, transparent);
+            top: 50%;
+        }
+        
+        .signature::before {
+            left: -70px;
+        }
+        
+        .signature::after {
+            right: -70px;
+        }
+        
+        .quote {
+            font-style: italic;
+            font-size: 1.3rem;
+            color: #f8f8f8;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 12px;
+            border-left: 4px solid #4ecdc4;
+            line-height: 1.6;
+            text-align: center;
+            max-width: 800px;
+            margin: 20px auto;
+            font-weight: 300;
         }
         
         /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
         
         .animated {
             animation: fadeIn 1s ease-in;
+        }
+        
+        .floating {
+            animation: float 5s ease-in-out infinite;
+        }
+        
+        /* Particle effect */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            opacity: 0;
         }
         
         /* Responsive Design */
@@ -386,14 +698,8 @@
             
             nav ul {
                 gap: 1rem;
-            }
-            
-            .hero h2 {
-                font-size: 2rem;
-            }
-            
-            .hero p {
-                font-size: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
             }
             
             .dashboard-cards, .exam-grid, .stats-grid {
@@ -402,25 +708,75 @@
             
             .footer-content {
                 grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .footer-section h3::after {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            
+            .social-icons {
+                justify-content: center;
+            }
+            
+            .exam-selector {
+                padding: 2rem 1.5rem;
+            }
+            
+            .signature {
+                font-size: 2.5rem;
+            }
+            
+            .signature::before, .signature::after {
+                width: 30px;
+            }
+            
+            .signature::before {
+                left: -50px;
+            }
+            
+            .signature::after {
+                right: -50px;
+            }
+            
+            .quote {
+                font-size: 1.1rem;
+                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Animated Background -->
+    <div class="bg-animation">
+        <ul class="bg-bubbles">
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+            <li></li>
+        </ul>
+    </div>
+
     <!-- Header -->
     <header>
         <div class="header-container">
             <div class="logo">
-                <i class="fas fa-graduation-cap"></i>
+                <i class="fas fa-graduation-cap floating"></i>
                 <h1>NECTA <span>Analytics</span></h1>
             </div>
             <nav>
                 <ul>
-                    <li><a href="#" class="active">Home</a></li>
-                    <li><a href="#">Rankings</a></li>
-                    <li><a href="#">Statistics</a></li>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a href="/" class="active">Home</a></li>
+                    <li><a href="#rankings">Rankings</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#contact">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -428,36 +784,12 @@
 
     <!-- Main Content -->
     <main>
-        {% comment %} <section class="hero">
-            <div class="container">
-                <h2>Tanzania National Examination Council Results</h2>
-                <p>Comprehensive analysis and ranking of secondary school performance based on official NECTA examination results</p>
-                <a href="#rankings" class="btn">View Rankings</a>
-            </div>
-        </section> {% endcomment %}
-
         <div class="container">
             <section class="dashboard-cards">
-                {% comment %} <div class="card animated">
-                    <i class="fas fa-chart-line"></i>
-                    <h3>Performance Analytics</h3>
-                    <p>Detailed analysis of school performance trends over time with interactive visualizations</p>
-                    <a href="#" class="btn btn-outline">Explore Data</a>
-                </div> {% endcomment %}
-                
-                <div class="card animated" style="animation-delay: 0.2s;">
-                    <i class="fas fa-trophy"></i>
-                    <h3>School Rankings</h3>
-                    <p>Comprehensive rankings of schools based on Division I-IV results and GPA calculations</p>
-                    <a href="#rankings" class="btn btn-outline">View Rankings</a>
+                <div class="card animated" style="animation-delay: 0.6s;">
+                    <i class="fas fa-bank"></i>
+                    <h3>Result Ranking</h3>
                 </div>
-                
-                {% comment %} <div class="card animated" style="animation-delay: 0.4s;">
-                    <i class="fas fa-map-marked-alt"></i>
-                    <h3>Regional Comparison</h3>
-                    <p>Compare performance across different regions and districts in Tanzania</p>
-                    <a href="#" class="btn btn-outline">Compare Regions</a>
-                </div> {% endcomment %}
             </section>
 
             <section class="exam-selector" id="rankings">
@@ -498,7 +830,7 @@
                         <p>Regions Covered</p>
                     </div>
                     <div class="stat-item">
-                        <h3 id="dataYears">5</h3>
+                        <h3 id="dataYears">3</h3>
                         <p>Years of Data</p>
                     </div>
                 </div>
@@ -507,7 +839,7 @@
     </main>
 
     <!-- Footer -->
-    <footer>
+    <footer id="contact">
         <div class="footer-content">
             <div class="footer-section">
                 <h3>NECTA Analytics</h3>
@@ -523,22 +855,10 @@
             <div class="footer-section">
                 <h3>Quick Links</h3>
                 <ul class="footer-links">
-                    <li><a href="#">Home</a></li>
-                    <li><a href="#rankings">Rankings</a></li>
-                    <li><a href="#">Statistics</a></li>
-                    <li><a href="#">Regional Data</a></li>
-                    <li><a href="#">Historical Trends</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-section">
-                <h3>Resources</h3>
-                <ul class="footer-links">
-                    <li><a href="#">Methodology</a></li>
-                    <li><a href="#">Data Sources</a></li>
-                    <li><a href="#">Research Papers</a></li>
-                    <li><a href="#">API Access</a></li>
-                    <li><a href="#">Download Reports</a></li>
+                    <li><i class="fas fa-arrow-right"></i><a href="/">Home</a></li>
+                    <li><i class="fas fa-arrow-right"></i><a href="#rankings">Rankings</a></li>
+                    <li><i class="fas fa-arrow-right"></i><a href="#about">About Us</a></li>
+                    <li><i class="fas fa-arrow-right"></i><a href="#contact">Contact</a></li>
                 </ul>
             </div>
             
@@ -553,7 +873,11 @@
         </div>
         
         <div class="footer-bottom">
-            <p>&copy; 2025 NECTA Analytics. All rights reserved. | Shaibu Mzogo</p>
+            <p>&copy; 2025 NECTA Analytics. All rights reserved. | <span class="signature">Shaibu Mzogo</span></p>
+        </div>
+        
+        <div class="quote">
+            "Unmatched perspicacity coupled with sheer indefatigability makes me a feared opponent in all realms of human endeavor"
         </div>
     </footer>
 
@@ -574,13 +898,42 @@
             window.requestAnimationFrame(step);
         }
         
+        // Create particles
+        function createParticles() {
+            const particlesContainer = document.createElement('div');
+            particlesContainer.className = 'particles';
+            document.body.appendChild(particlesContainer);
+            
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 5 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                
+                const animationDuration = Math.random() * 10 + 5;
+                particle.style.animation = `
+                    fadeIn 1s ease-in forwards,
+                    moveParticle ${animationDuration}s linear infinite
+                `;
+                
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
         // Start animations when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Animate statistics counters
             setTimeout(() => animateValue('schoolsCount', 0, 1200, 2000), 500);
             setTimeout(() => animateValue('studentsCount', 0, 500000, 2500), 800);
             
-            // Add animation to exam cards on scroll
+            createParticles();
+
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -589,8 +942,20 @@
                 });
             }, { threshold: 0.1 });
             
-            document.querySelectorAll('.exam-card').forEach(card => {
-                observer.observe(card);
+            document.querySelectorAll('.exam-card, .stat-item').forEach(item => {
+                observer.observe(item);
+            });
+            
+            // Add floating animation to cards on hover
+            const cards = document.querySelectorAll('.card, .exam-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.classList.add('floating');
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.classList.remove('floating');
+                });
             });
         });
     </script>
