@@ -1,963 +1,577 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NECTA Results Rankings - Tanzania Education Analytics</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #1a237e;
-            --primary-light: #534bae;
-            --primary-dark: #000051;
-            --secondary: #00bcd4;
-            --secondary-light: #62efff;
-            --secondary-dark: #008ba3;
-            --accent: #ff4081;
-            --light: #f5f5f7;
-            --dark: #121212;
-            --success: #00c853;
-            --warning: #ffab00;
-            --text: #212121;
-            --text-light: #757575;
-            --card-bg: rgba(255, 255, 255, 0.92);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-            background: linear-gradient(-45deg, #1a237e, #311b92, #006064, #00897b);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-        }
-        
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        /* Animated background elements */
-        .bg-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-        
-        .bg-bubbles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .bg-bubbles li {
-            position: absolute;
-            list-style: none;
-            display: block;
-            width: 40px;
-            height: 40px;
-            background-color: rgba(255, 255, 255, 0.15);
-            bottom: -160px;
-            border-radius: 50%;
-            animation: square 25s infinite;
-            transition-timing-function: linear;
-        }
-        
-        .bg-bubbles li:nth-child(1) {
-            left: 10%;
-            animation-delay: 0s;
-            width: 80px;
-            height: 80px;
-        }
-        
-        .bg-bubbles li:nth-child(2) {
-            left: 20%;
-            animation-delay: 2s;
-            animation-duration: 17s;
-            width: 60px;
-            height: 60px;
-        }
-        
-        .bg-bubbles li:nth-child(3) {
-            left: 25%;
-            animation-delay: 4s;
-            width: 120px;
-            height: 120px;
-        }
-        
-        .bg-bubbles li:nth-child(4) {
-            left: 40%;
-            animation-delay: 0s;
-            animation-duration: 22s;
-            width: 160px;
-            height: 160px;
-        }
-        
-        .bg-bubbles li:nth-child(5) {
-            left: 70%;
-            animation-delay: 3s;
-            width: 100px;
-            height: 100px;
-        }
-        
-        .bg-bubbles li:nth-child(6) {
-            left: 80%;
-            animation-delay: 2s;
-            width: 120px;
-            height: 120px;
-        }
-        
-        .bg-bubbles li:nth-child(7) {
-            left: 32%;
-            animation-delay: 6s;
-            width: 140px;
-            height: 140px;
-        }
-        
-        .bg-bubbles li:nth-child(8) {
-            left: 55%;
-            animation-delay: 8s;
-            animation-duration: 18s;
-            width: 40px;
-            height: 40px;
-        }
-        
-        .bg-bubbles li:nth-child(9) {
-            left: 25%;
-            animation-delay: 9s;
-            animation-duration: 20s;
-            width: 20px;
-            height: 20px;
-        }
-        
-        .bg-bubbles li:nth-child(10) {
-            left: 90%;
-            animation-delay: 11s;
-            width: 160px;
-            height: 160px;
-        }
-        
-        @keyframes square {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-                border-radius: 50%;
-            }
-            100% {
-                transform: translateY(-1000px) rotate(720deg);
-                opacity: 0;
-                border-radius: 10%;
-            }
-        }
-        
-        /* Header Styles */
-        header {
-            background: rgba(26, 35, 126, 0.85);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .logo i {
-            font-size: 2rem;
-            color: var(--secondary-light);
-            text-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
-        }
-        
-        .logo h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #fff, var(--secondary-light));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        
-        nav ul {
-            display: flex;
-            list-style: none;
-            gap: 2rem;
-        }
-        
-        nav a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-            position: relative;
-            padding: 0.5rem 0;
-        }
-        
-        nav a:hover {
-            color: var(--secondary-light);
-            text-shadow: 0 0 8px rgba(98, 239, 255, 0.7);
-        }
-        
-        nav a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 3px;
-            background: var(--secondary-light);
-            transition: width 0.3s;
-            box-shadow: 0 0 8px var(--secondary-light);
-        }
-        
-        nav a:hover::after {
-            width: 100%;
-        }
-        
-        /* Main Content */
-        main {
-            flex: 1;
-            padding: 2rem 0;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        .dashboard-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-        
-        .card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 2.5rem 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 5px;
-            height: 100%;
-            background: linear-gradient(to bottom, var(--secondary), var(--primary));
-        }
-        
-        .card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-        }
-        
-        .card i {
-            font-size: 3.5rem;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 1.5rem;
-            filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.1));
-        }
-        
-        .card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-        
-        .card p {
-            color: var(--text-light);
-            margin-bottom: 1.5rem;
-            font-size: 0.95rem;
-        }
-        
-        .btn {
-            display: inline-block;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-            padding: 0.8rem 1.8rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(26, 35, 126, 0.4);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: 0.5s;
-        }
-        
-        .btn:hover::before {
-            left: 100%;
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(26, 35, 126, 0.6);
-        }
-        
-        .btn:active {
-            transform: translateY(1px);
-        }
-        
-        .btn-outline {
-            background: transparent;
-            color: var(--primary);
-            border: 2px solid var(--primary);
-            box-shadow: none;
-        }
-        
-        .btn-outline:hover {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .exam-selector {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 3rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            margin-bottom: 3rem;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .exam-selector h2 {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            color: var(--primary);
-            font-size: 2.2rem;
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        .exam-selector h2::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 4px;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            border-radius: 2px;
-        }
-        
-        .exam-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .exam-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.4s ease;
-            border-left: 5px solid var(--secondary);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .exam-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(26, 35, 126, 0.05) 0%, rgba(0, 188, 212, 0.05) 100%);
-            z-index: 0;
-        }
-        
-        .exam-card:hover {
-            transform: translateY(-8px) scale(1.03);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-            border-left: 5px solid var(--accent);
-        }
-        
-        .exam-card h3 {
-            color: var(--primary);
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .exam-card p {
-            color: var(--text-light);
-            margin-bottom: 1.5rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .stats-section {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 4rem 0;
-            border-radius: 20px;
-            margin-bottom: 3rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stats-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-            transform: rotate(30deg);
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2.5rem;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .stat-item {
-            padding: 1.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.3s;
-        }
-        
-        .stat-item:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.15);
-        }
-        
-        .stat-item h3 {
-            font-size: 2.8rem;
-            margin-bottom: 0.5rem;
-            color: var(--secondary-light);
-            text-shadow: 0 0 10px rgba(98, 239, 255, 0.7);
-        }
-        
-        .stat-item p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        /* Footer Styles */
-        footer {
-            background: var(--dark);
-            color: white;
-            padding: 4rem 0 1.5rem;
-            margin-top: auto;
-            position: relative;
-        }
-        
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 3rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .footer-section h3 {
-            font-size: 1.3rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-            padding-bottom: 0.8rem;
-            color: var(--secondary-light);
-        }
-        
-        .footer-section h3::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 50px;
-            height: 3px;
-            background: var(--secondary);
-            border-radius: 3px;
-        }
-        
-        .footer-links {
-            list-style: none;
-        }
-        
-        .footer-links li {
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .footer-links i {
-            color: var(--secondary);
-        }
-        
-        .footer-links a {
-            color: #ccc;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        
-        .footer-links a:hover {
-            color: var(--secondary-light);
-            padding-left: 5px;
-        }
-        
-        .social-icons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-        
-        .social-icons a {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 45px;
-            height: 45px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            color: white;
-            transition: all 0.3s;
-        }
-        
-        .social-icons a:hover {
-            background: var(--secondary);
-            transform: translateY(-5px) rotate(10deg);
-            box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
-        }
-        
-        .footer-bottom {
-            text-align: center;
-            padding-top: 3rem;
-            margin-top: 3rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Signature Styles */
-        .signature {
-            font-family: 'Brush Script MT', cursive;
-            font-size: 3.5rem;
-            background: linear-gradient(to right, #ff9a9e, #fad0c4, #a18cd1);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
-            margin: 20px 0;
-            padding: 10px;
-            display: inline-block;
-            position: relative;
-            font-weight: bold;
-        }
-        
-        .signature::before, .signature::after {
-            content: "";
-            position: absolute;
-            height: 3px;
-            width: 50px;
-            background: linear-gradient(to right, transparent, #ff6b6b, transparent);
-            top: 50%;
-        }
-        
-        .signature::before {
-            left: -70px;
-        }
-        
-        .signature::after {
-            right: -70px;
-        }
-        
-        .quote {
-            font-style: italic;
-            font-size: 1.3rem;
-            color: #f8f8f8;
-            padding: 25px;
-            background: rgba(0, 0, 0, 0.15);
-            border-radius: 12px;
-            border-left: 4px solid #4ecdc4;
-            line-height: 1.6;
-            text-align: center;
-            max-width: 800px;
-            margin: 20px auto;
-            font-weight: 300;
-        }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-        
-        .animated {
-            animation: fadeIn 1s ease-in;
-        }
-        
-        .floating {
-            animation: float 5s ease-in-out infinite;
-        }
-        
-        /* Particle effect */
-        .particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: 0;
-        }
-        
-        .particle {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            opacity: 0;
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .header-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            nav ul {
-                gap: 1rem;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            
-            .dashboard-cards, .exam-grid, .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .footer-content {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-            
-            .footer-section h3::after {
-                left: 50%;
-                transform: translateX(-50%);
-            }
-            
-            .social-icons {
-                justify-content: center;
-            }
-            
-            .exam-selector {
-                padding: 2rem 1.5rem;
-            }
-            
-            .signature {
-                font-size: 2.5rem;
-            }
-            
-            .signature::before, .signature::after {
-                width: 30px;
-            }
-            
-            .signature::before {
-                left: -50px;
-            }
-            
-            .signature::after {
-                right: -50px;
-            }
-            
-            .quote {
-                font-size: 1.1rem;
-                padding: 15px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Animated Background -->
-    <div class="bg-animation">
-        <ul class="bg-bubbles">
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-            <li></li>
-        </ul>
+{% extends "base.html" %}
+
+{% block title %}Home - NECTA Results Ranking System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row justify-content-center mb-5 animate-in">
+    <div class="col-lg-10">
+        <div class="card hero-card">
+            <div class="card-body text-center p-5">
+                <h1 class="display-4 fw-bold mb-3">NECTA Results <span class="text-gradient">Ranking System</span></h1>
+                <p class="lead mb-4">Comprehensive analysis of school performance based on National Examination Council of Tanzania results</p>
+                
+                <div class="search-card mt-4">
+                    <div class="card">
+                        <div class="card-header bg-transparent border-0 pb-0">
+                            <h5 class="mb-0"><i class="fas fa-search me-2 text-primary"></i>Find School Rankings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="get" action="{% url 'school_rankings' 'ACSEE' 2023 %}" id="rankingForm">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-5">
+                                        <label for="exam_type" class="form-label text-muted small mb-1">
+                                            <i class="fas fa-book me-1 text-primary"></i>Exam Type
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-dark border-secondary"><i class="fas fa-graduation-cap"></i></span>
+                                            <select class="form-select bg-dark text-light border-secondary" name="exam_type" id="exam_type" required>
+                                                {% for exam in exam_types %}
+                                                <option value="{{ exam }}" {% if exam == 'ACSEE' %}selected{% endif %}>{{ exam }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label for="year" class="form-label text-muted small mb-1">
+                                            <i class="fas fa-calendar me-1 text-primary"></i>Year
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-dark border-secondary"><i class="fas fa-calendar-days"></i></span>
+                                            <select class="form-select bg-dark text-light border-secondary" name="year" id="year" required>
+                                                {% for year in years %}
+                                                <option value="{{ year }}" {% if year == 2023 %}selected{% endif %}>{{ year }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-primary w-100 py-2">
+                                            <i class="fas fa-chart-line me-2"></i>View
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="row mb-4 animate-in delay-1">
+    <div class="col-12">
+        <div class="card stats-overview-card">
+            <div class="card-header">
+                <i class="fas fa-tachometer-alt me-2 text-primary"></i>Quick Stats Overview
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3 text-center">
+                        <div class="stat-card h-100">
+                            <div class="stat-icon mb-2">
+                                <i class="fas fa-school"></i>
+                            </div>
+                            <div class="stat-number">{{ total_schools|default:"0" }}</div>
+                            <div class="stat-label">Schools Tracked</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="stat-card h-100">
+                            <div class="stat-icon mb-2">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="stat-number">{{ years|length }}</div>
+                            <div class="stat-label">Years of Data</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="stat-card h-100">
+                            <div class="stat-icon mb-2">
+                                <i class="fas fa-map-marked-alt"></i>
+                            </div>
+                            <div class="stat-number">{{ regions|length }}</div>
+                            <div class="stat-label">Regions Covered</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="stat-card h-100">
+                            <div class="stat-icon mb-2">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="stat-number">2</div>
+                            <div class="stat-label">Exam Types</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row animate-in delay-2">
+    <!-- Top Schools - Enhanced Version -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 top-schools-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-trophy me-2 text-warning"></i>
+                    <h5 class="mb-0">Top Performing Schools (ACSEE 2023)</h5>
+                </div>
+                <a href="{% url 'school_rankings' 'ACSEE' 2023 %}" class="btn btn-sm view-all-btn">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for result in top_schools|slice:":5" %}
+                    <div class="list-group-item top-school-item">
+                        <div class="d-flex align-items-center">
+                            <div class="rank-badge rank-{{ forloop.counter }} me-3">
+                                {{ forloop.counter }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 school-name">{{ result.school.name }}</h6>
+                                <div class="school-details">
+                                    <div class="school-region">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ result.school.region }}
+                                    </div>
+                                    <div class="school-stats">
+                                        <span class="stat-pill gpa-pill">{{ result.gpa|floatformat:2 }} GPA</span>
+                                        <span class="stat-pill division-pill">Div I: {{ result.division1 }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <p>No ACSEE 2023 results available.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Header -->
-    <header>
-        <div class="header-container">
-            <div class="logo">
-                <i class="fas fa-graduation-cap floating"></i>
-                <h1>NECTA <span>Analytics</span></h1>
+    <!-- Regions -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-map me-2 text-success"></i>Browse by Region
+                </div>
+                <a href="#" class="btn btn-sm btn-outline-secondary">
+                    View All <i class="fas fa-chevron-down ms-1"></i>
+                </a>
             </div>
-            <nav>
-                <ul>
-                    <li><a href="/" class="active">Home</a></li>
-                    <li><a href="#rankings">Rankings</a></li>
-                    <li><a href="#about">About</a></li>
-                    <li><a href="#contact">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main>
-        <div class="container">
-            <section class="dashboard-cards">
-                <div class="card animated" style="animation-delay: 0.6s;">
-                    <i class="fas fa-bank"></i>
-                    <h3>Result Ranking</h3>
+            <div class="card-body">
+                <div class="row g-2">
+                    {% for region in regions|slice:":12" %}
+                    <div class="col-md-6 mb-2">
+                        <a href="{% url 'region_rankings' 'ACSEE' 2023 region %}" class="region-card text-decoration-none">
+                            <div class="d-flex align-items-center p-3 rounded">
+                                <div class="region-icon me-3">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="region-name">{{ region }}</div>
+                                <div class="region-arrow ms-auto">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
                 </div>
-            </section>
-
-            <section class="exam-selector" id="rankings">
-                <h2>Examination Results Rankings</h2>
-                <div class="exam-grid">
-                    <div class="exam-card">
-                        <h3>ACSEE 2023</h3>
-                        <p>Advanced Certificate of Secondary Education Examination</p>
-                        <a href="/rankings/ACSEE/2023/" class="btn">View ACSEE Rankings</a>
-                    </div>
-                    
-                    <div class="exam-card">
-                        <h3>CSEE 2023</h3>
-                        <p>Certificate of Secondary Education Examination</p>
-                        <a href="/rankings/CSEE/2023/" class="btn">View CSEE Rankings</a>
-                    </div>
-
-                    <div class="exam-card">
-                        <h3>CSEE 2024</h3>
-                        <p>Certificate of Secondary Education Examination</p>
-                        <a href="/rankings/CSEE/2024/" class="btn">View CSEE Rankings</a>
-                    </div>
-                </div>
-            </section>
-
-            <section class="stats-section">
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <h3 id="schoolsCount">1,200+</h3>
-                        <p>Schools Analyzed</p>
-                    </div>
-                    <div class="stat-item">
-                        <h3 id="studentsCount">500,000+</h3>
-                        <p>Students Assessed</p>
-                    </div>
-                    <div class="stat-item">
-                        <h3 id="regionsCount">26</h3>
-                        <p>Regions Covered</p>
-                    </div>
-                    <div class="stat-item">
-                        <h3 id="dataYears">3</h3>
-                        <p>Years of Data</p>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer id="contact">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>NECTA Analytics</h3>
-                <p>Providing comprehensive analysis of Tanzania's educational performance through data visualization and rankings.</p>
-                <div class="social-icons">
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                </div>
-            </div>
-            
-            <div class="footer-section">
-                <h3>Quick Links</h3>
-                <ul class="footer-links">
-                    <li><i class="fas fa-arrow-right"></i><a href="/">Home</a></li>
-                    <li><i class="fas fa-arrow-right"></i><a href="#rankings">Rankings</a></li>
-                    <li><i class="fas fa-arrow-right"></i><a href="#about">About Us</a></li>
-                    <li><i class="fas fa-arrow-right"></i><a href="#contact">Contact</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-section">
-                <h3>Contact Us</h3>
-                <ul class="footer-links">
-                    <li><i class="fas fa-map-marker-alt"></i> Dodoma, Tanzania</li>
-                    <li><i class="fas fa-phone"></i> +255 761 817 680</li>
-                    <li><i class="fas fa-envelope"></i> bravomzogo@gmail.com</li>
-                </ul>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- About Section -->
+<div class="row mt-4 animate-in delay-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2 text-info"></i>About NECTA Rankings
+            </div>
+            <div class="card-body">
+                <p class="lead mb-4">
+                    Our system provides comprehensive analysis of school performance based on 
+                    National Examination Council of Tanzania (NECTA) results.
+                </p>
+                <div class="row mt-4">
+                    <div class="col-md-4 mb-4">
+                        <div class="feature-card text-center p-4 h-100">
+                            <div class="feature-icon mb-3">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h5>Performance Tracking</h5>
+                            <p class="text-muted mb-0">Track performance trends over years and compare schools across regions.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="feature-card text-center p-4 h-100">
+                            <div class="feature-icon mb-3">
+                                <i class="fas fa-filter"></i>
+                            </div>
+                            <h5>Advanced Filtering</h5>
+                            <p class="text-muted mb-0">Filter results by exam type, year, region, and school performance metrics.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="feature-card text-center p-4 h-100">
+                            <div class="feature-icon mb-3">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <h5>Data Export</h5>
+                            <p class="text-muted mb-0">Export ranking data for further analysis in CSV format.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Section */
+    .hero-card {
+        background: linear-gradient(135deg, var(--card-bg) 0%, var(--secondary-bg) 100%);
+        border: none;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .hero-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(47,129,247,0.1) 0%, transparent 70%);
+        z-index: 0;
+    }
+    
+    .hero-card .card-body {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .text-gradient {
+        background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    /* Search Card */
+    .search-card .card {
+        background: rgba(30, 35, 42, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Stats Overview */
+    .stats-overview-card .stat-card {
+        background: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-overview-card .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        border-color: var(--accent);
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        color: var(--accent);
+    }
+    
+    /* Enhanced Top Schools */
+    .top-schools-card {
+        border: none;
+        overflow: hidden;
+    }
+    
+    .top-schools-card .card-header {
+        background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+        color: white;
+        border: none;
+    }
+    
+    .top-schools-card .card-header h5 {
+        margin: 0;
+        font-weight: 700;
+    }
+    
+    .top-school-item {
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        padding: 16px 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .top-school-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4px;
+        background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .top-school-item:hover::before {
+        opacity: 1;
+    }
+    
+    .top-school-item:hover {
+        background-color: rgba(212, 160, 23, 0.05);
+        transform: translateX(5px);
+    }
+    
+    .rank-badge {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-sm);
+        font-size: 1.1rem;
+    }
+    
+    .rank-1 {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        box-shadow: 0 4px 10px rgba(255, 215, 0, 0.4);
+    }
+    
+    .rank-2 {
+        background: linear-gradient(135deg, #C0C0C0, #A9A9A9);
+        box-shadow: 0 4px 10px rgba(192, 192, 192, 0.4);
+    }
+    
+    .rank-3 {
+        background: linear-gradient(135deg, #CD7F32, #8C6B46);
+        box-shadow: 0 4px 10px rgba(205, 127, 50, 0.4);
+    }
+    
+    .rank-4, .rank-5 {
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        box-shadow: 0 4px 10px rgba(212, 160, 23, 0.4);
+    }
+    
+    .school-name {
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--text-color);
+    }
+    
+    .school-details {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .school-region {
+        display: flex;
+        align-items: center;
+        color: var(--muted-text);
+        font-size: 0.9rem;
+    }
+    
+    .school-stats {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .stat-pill {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+    
+    .gpa-pill {
+        background: rgba(46, 125, 50, 0.1);
+        color: var(--success);
+    }
+    
+    .division-pill {
+        background: rgba(212, 160, 23, 0.1);
+        color: var(--accent);
+    }
+    
+    .view-all-btn {
+        background: rgba(212, 160, 23, 0.1);
+        color: var(--accent);
+        border: none;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+    
+    .view-all-btn:hover {
+        background: var(--accent);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .view-all-btn i {
+        margin-left: 5px;
+        transition: transform 0.3s ease;
+    }
+    
+    .view-all-btn:hover i {
+        transform: translateX(3px);
+    }
+    
+    /* Region Cards */
+    .region-card .d-flex {
+        background: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .region-card:hover .d-flex {
+        background: rgba(212, 160, 23, 0.1);
+        border-color: var(--accent);
+        transform: translateX(5px);
+    }
+    
+    .region-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(212, 160, 23, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+    }
+    
+    .region-name {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+    
+    .region-arrow {
+        color: var(--muted-text);
+        transition: transform 0.2s ease;
+    }
+    
+    .region-card:hover .region-arrow {
+        transform: translateX(3px);
+        color: var(--accent);
+    }
+    
+    /* Feature Cards */
+    .feature-card {
+        background: var(--secondary-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        border-color: var(--accent);
+    }
+    
+    .feature-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: rgba(212, 160, 23, 0.1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: var(--accent);
+    }
+    
+    /* Input group enhancements */
+    .input-group-text {
+        background: var(--secondary-bg) !important;
+        border-color: var(--border-color) !important;
+        color: var(--muted-text) !important;
+    }
+    
+    /* Animation delays */
+    .animate-in { animation-delay: 0.1s; }
+    .delay-1 { animation-delay: 0.2s; }
+    .delay-2 { animation-delay: 0.3s; }
+    .delay-3 { animation-delay: 0.4s; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Update form action when selections change
+    document.getElementById('exam_type').addEventListener('change', updateFormAction);
+    document.getElementById('year').addEventListener('change', updateFormAction);
+    
+    function updateFormAction() {
+        const examType = document.getElementById('exam_type').value;
+        const year = document.getElementById('year').value;
+        const form = document.getElementById('rankingForm');
+        form.action = `/rankings/${examType}/${year}/`;
+    }
+    
+    // Add animation to stats cards on scroll
+    document.addEventListener('DOMContentLoaded', function() {
+        const statCards = document.querySelectorAll('.stat-card');
         
-        <div class="footer-bottom">
-            <p>&copy; 2025 NECTA Analytics. All rights reserved. | <span class="signature">Shaibu Mzogo</span></p>
-        </div>
-        
-        <div class="quote">
-            "Unmatched perspicacity coupled with sheer indefatigability makes me a feared opponent in all realms of human endeavor"
-        </div>
-    </footer>
-
-    <script>
-        // Animated counter for statistics
-        function animateValue(id, start, end, duration) {
-            const obj = document.getElementById(id);
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const value = Math.floor(progress * (end - start) + start);
-                obj.innerHTML = value.toLocaleString() + '+';
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animated');
                 }
-            };
-            window.requestAnimationFrame(step);
-        }
+            });
+        }, { threshold: 0.1 });
         
-        // Create particles
-        function createParticles() {
-            const particlesContainer = document.createElement('div');
-            particlesContainer.className = 'particles';
-            document.body.appendChild(particlesContainer);
-            
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                
-                const size = Math.random() * 5 + 2;
-                particle.style.width = `${size}px`;
-                particle.style.height = `${size}px`;
-                
-                particle.style.left = `${Math.random() * 100}vw`;
-                particle.style.top = `${Math.random() * 100}vh`;
-                
-                const animationDuration = Math.random() * 10 + 5;
-                particle.style.animation = `
-                    fadeIn 1s ease-in forwards,
-                    moveParticle ${animationDuration}s linear infinite
-                `;
-                
-                particle.style.animationDelay = `${Math.random() * 5}s`;
-                
-                particlesContainer.appendChild(particle);
-            }
-        }
+        statCards.forEach(card => {
+            observer.observe(card);
+        });
         
-        // Start animations when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => animateValue('schoolsCount', 0, 1200, 2000), 500);
-            setTimeout(() => animateValue('studentsCount', 0, 500000, 2500), 800);
-            
-            createParticles();
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('animated');
-                    }
-                });
-            }, { threshold: 0.1 });
-            
-            document.querySelectorAll('.exam-card, .stat-item').forEach(item => {
-                observer.observe(item);
+        // Enhanced school item interactions
+        const schoolItems = document.querySelectorAll('.top-school-item');
+        schoolItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(5px)';
             });
             
-            // Add floating animation to cards on hover
-            const cards = document.querySelectorAll('.card, .exam-card');
-            cards.forEach(card => {
-                card.addEventListener('mouseenter', () => {
-                    card.classList.add('floating');
-                });
-                
-                card.addEventListener('mouseleave', () => {
-                    card.classList.remove('floating');
-                });
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
             });
         });
-    </script>
-</body>
-</html>
+    });
+</script>
+{% endblock %}

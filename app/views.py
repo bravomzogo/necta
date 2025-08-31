@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.db.models import Sum, Avg, Count, Q
-from .models import ExamResult
+from .models import ExamResult, School
 from .services import get_ranked_schools
 
 def school_rankings(request, exam_type, year):
+    # Get ranked schools using the scraped data
     results = get_ranked_schools(exam_type, year)
     
     # Calculate statistics for the charts
@@ -33,14 +34,29 @@ def school_rankings(request, exam_type, year):
         '4_plus': results.filter(gpa__gte=4.0).count(),
     }
     
+    # Add ranking position to each result
+    ranked_results = []
+    for rank, result in enumerate(results, start=1):
+        ranked_results.append({
+            'rank': rank,
+            'school': result.school,
+            'gpa': result.gpa,
+            'division1': result.division1,
+            'division2': result.division2,
+            'division3': result.division3,
+            'division4': result.division4,
+            'division0': result.division0,
+            'total': result.total,
+        })
+    
     context = {
-        'results': results,
+        'results': ranked_results,
         'exam_type': exam_type,
         'year': year,
         'total_schools': total_schools,
         'total_students': total_students,
-        'avg_gpa_all': round(avg_gpa_all, 2),
-        'best_gpa': best_gpa,
+        'avg_gpa_all': round( avg_gpa_all, 2),
+        'best_gpa': round(best_gpa, 4) if best_gpa else 0,
         'division1_total': division_totals['div1'] or 0,
         'division2_total': division_totals['div2'] or 0,
         'division3_total': division_totals['div3'] or 0,
@@ -54,6 +70,78 @@ def school_rankings(request, exam_type, year):
     
     return render(request, "rankings.html", context)
 
-
 def home(request):
-    return render(request, "home.html")
+    # Get available years and exam types for the dropdown
+    years = list(ExamResult.objects.values_list('year', flat=True).distinct().order_by('-year'))
+    
+    # Get unique exam types and convert to a set to remove duplicates, then back to sorted list
+    exam_types_queryset = ExamResult.objects.values_list('exam', flat=True).distinct()
+    exam_types = sorted(set(exam_types_queryset))
+    
+    regions = list(School.objects.values_list('region', flat=True).distinct()
+                 .exclude(region='Unknown').exclude(region__isnull=True).order_by('region'))
+    
+    # Get some statistics for the home page
+    total_schools = School.objects.count()
+    
+    # Get top schools for ACSEE 2023
+    top_schools = ExamResult.objects.filter(year=2023, exam='ACSEE').select_related('school').order_by('gpa')[:5]
+    
+    # Safely get the latest year for other purposes
+    latest_year = ExamResult.objects.latest('year').year if ExamResult.objects.exists() else None
+    
+    context = {
+        'years': years,
+        'exam_types': exam_types,
+        'regions': regions,
+        'top_schools': top_schools,
+        'latest_year': latest_year,
+        'total_schools': total_schools,
+    }
+    return render(request, "home.html", context)
+
+def school_detail(request, school_id):
+    # Get school details and all its exam results
+    school = get_object_or_404(School, id=school_id)
+    results = ExamResult.objects.filter(school=school).order_by('-year', 'exam')
+    
+    context = {
+        'school': school,
+        'results': results,
+    }
+    return render(request, "school_detail.html", context)
+
+def region_rankings(request, exam_type, year, region):
+    # Get ranked schools for a specific region
+    results = ExamResult.objects.filter(
+        exam=exam_type.upper(), 
+        year=year,
+        school__region__iexact=region,
+        gpa__gt=0
+    ).select_related('school').order_by("gpa", "-total")
+    
+    # Add ranking position to each result
+    ranked_results = []
+    for rank, result in enumerate(results, start=1):
+        ranked_results.append({
+            'rank': rank,
+            'school': result.school,
+            'gpa': result.gpa,
+            'division1': result.division1,
+            'division2': result.division2,
+            'division3': result.division3,
+            'division4': result.division4,
+            'division0': result.division0,
+            'total': result.total,
+        })
+    
+    context = {
+        'results': ranked_results,
+        'exam_type': exam_type,
+        'year': year,
+        'region': region,
+        'regions': list(School.objects.values_list('region', flat=True).distinct()
+                       .exclude(region='Unknown').exclude(region__isnull=True).order_by('region')),
+    }
+    
+    return render(request, "region_rankings.html", context)

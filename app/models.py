@@ -1,11 +1,13 @@
+# models.py
 from django.db import models
 
 class School(models.Model):
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=255)
+    region = models.CharField(max_length=100, default="Unknown")
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return f"{self.code} - {self.name} ({self.region})"
 
 
 class ExamResult(models.Model):
@@ -24,6 +26,7 @@ class ExamResult(models.Model):
 
     class Meta:
         unique_together = ("school", "exam", "year")
+        ordering = ["gpa", "-total"]  # Order by GPA (ascending) then by total students (descending)
 
     def __str__(self):
         return f"{self.school.name} ({self.exam} {self.year}) - GPA: {self.gpa:.2f}"

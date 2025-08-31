@@ -14,94 +14,36 @@ class Command(BaseCommand):
         parser.add_argument("--exam", type=str, required=True, help="Exam type: CSEE or ACSEE")
         parser.add_argument("--year", type=int, required=True, help="Exam year (e.g. 2023)")
 
-    def calculate_gpa(self, div_counts):
-        """
-        Calculate GPA based on NECTA division system
-        Division I = 1.0 point (best)
-        Division II = 2.0 points
-        Division III = 3.0 points
-        Division IV = 4.0 points (worst)
-        Division 0 = 4.0 points (failures count as worst)
-        """
-        total_students = sum(div_counts.values())
-        
-        if total_students == 0:
-            return 4.0  # Worst possible GPA if no students
-        
-        total_points = (
-            div_counts["I"] * 1.0 +    # Division I = 1.0 (best)
-            div_counts["II"] * 2.0 +   # Division II = 2.0
-            div_counts["III"] * 3.0 +  # Division III = 3.0
-            div_counts["IV"] * 4.0 +   # Division IV = 4.0 (worst)
-            div_counts["0"] * 4.0      # Division 0 = 4.0 (failures)
-        )
-        
-        return round(total_points / total_students, 2)
-
     def parse_division_summary(self, soup):
-        """Parse the division performance summary table from the results page"""
         div_counts = {"I": 0, "II": 0, "III": 0, "IV": 0, "0": 0}
-        
-        # Look for the division summary table by searching for the pattern
-        # The table has specific width attributes and contains division data
+        division_table = None
         tables = soup.find_all('table')
-        
         for table in tables:
-            # Look for the specific pattern of the division summary table
-            # It has rows with cells that have width attributes like "3%", "5%"
-            rows = table.find_all('tr')
-            for i, row in enumerate(rows):
-                cells = row.find_all(['td', 'th'])
-                
-                # Check if this row contains division headers
-                header_text = ' '.join([cell.get_text(strip=True) for cell in cells]).upper()
-                if 'I' in header_text and 'II' in header_text and 'III' in header_text and 'IV' in header_text and '0' in header_text:
-                    # This is the header row, the next rows should contain data
-                    if i + 2 < len(rows):
-                        # Look for the "T" (Total) row which should be the third row
-                        total_cells = rows[i + 2].find_all(['td', 'th'])
-                        if len(total_cells) >= 6:
-                            sex = total_cells[0].get_text(strip=True).upper()
-                            if sex == 'T':
-                                try:
-                                    div_counts["I"] = int(total_cells[1].get_text(strip=True) or 0)
-                                    div_counts["II"] = int(total_cells[2].get_text(strip=True) or 0)
-                                    div_counts["III"] = int(total_cells[3].get_text(strip=True) or 0)
-                                    div_counts["IV"] = int(total_cells[4].get_text(strip=True) or 0)
-                                    div_counts["0"] = int(total_cells[5].get_text(strip=True) or 0)
-                                except ValueError:
-                                    pass
-                                break
-                    
-                    # Also check if we can find the data in the immediate next row
-                    if i + 1 < len(rows):
-                        data_cells = rows[i + 1].find_all(['td', 'th'])
-                        if len(data_cells) >= 6:
-                            sex = data_cells[0].get_text(strip=True).upper()
-                            if sex == 'T':
-                                try:
-                                    div_counts["I"] = int(data_cells[1].get_text(strip=True) or 0)
-                                    div_counts["II"] = int(data_cells[2].get_text(strip=True) or 0)
-                                    div_counts["III"] = int(data_cells[3].get_text(strip=True) or 0)
-                                    div_counts["IV"] = int(data_cells[4].get_text(strip=True) or 0)
-                                    div_counts["0"] = int(data_cells[5].get_text(strip=True) or 0)
-                                except ValueError:
-                                    pass
-                                break
+            if 'DIVISION PERFORMANCE SUMMARY' in table.get_text():
+                division_table = table
+                break
         
-        # If we still haven't found the data, try a more direct approach
+        if division_table:
+            rows = division_table.find_all('tr')
+            for row in rows:
+                cells = row.find_all(['td', 'th'])
+                if len(cells) >= 6 and cells[0].get_text(strip=True).upper() == 'T':
+                    try:
+                        div_counts["I"] = int(cells[1].get_text(strip=True) or 0)
+                        div_counts["II"] = int(cells[2].get_text(strip=True) or 0)
+                        div_counts["III"] = int(cells[3].get_text(strip=True) or 0)
+                        div_counts["IV"] = int(cells[4].get_text(strip=True) or 0)
+                        div_counts["0"] = int(cells[5].get_text(strip=True) or 0)
+                    except ValueError:
+                        pass
+                    break
+        
         if not any(div_counts.values()):
-            # Look for text patterns that might contain the division data
             text = soup.get_text()
-            
-            # Pattern for: F 0 1 2 1 2 (Female row)
-            # Pattern for: M 1 2 8 16 12 (Male row)
-            # Pattern for: T 1 3 10 17 14 (Total row)
             patterns = [
-                r'[Tt]\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)',  # T 1 3 10 17 14
-                r'Total\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)',  # Total 1 3 10 17 14
+                r'[Tt]\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)',
+                r'Total\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)',
             ]
-            
             for pattern in patterns:
                 matches = re.findall(pattern, text)
                 for match in matches:
@@ -117,6 +59,100 @@ class Command(BaseCommand):
                             pass
         
         return div_counts
+
+    def parse_overall_performance(self, soup):
+        overall = {}
+        tables = soup.find_all('table')
+        for table in tables:
+            rows = table.find_all('tr')
+            for row in rows:
+                cells = row.find_all('td')
+                if len(cells) == 2:
+                    key = cells[0].get_text(strip=True).upper()
+                    value = cells[1].get_text(strip=True)
+                    overall[key] = value
+        return overall
+
+    def parse_division_performance(self, soup):
+        division_perf = {}
+        tables = soup.find_all('table')
+        for table in tables:
+            if 'EXAMINATION CENTRE DIVISION PERFORMANCE' in table.get_text():
+                rows = table.find_all('tr')
+                if len(rows) > 1:
+                    headers = [cell.get_text(strip=True) for cell in rows[0].find_all('td')]
+                    values = [cell.get_text(strip=True) for cell in rows[1].find_all('td')]
+                    for h, v in zip(headers, values):
+                        division_perf[h] = v
+                break
+        return division_perf
+
+    def parse_subjects_performance(self, soup):
+        subjects = []
+        tables = soup.find_all('table')
+        for table in tables:
+            if 'EXAMINATION CENTRE SUBJECTS PERFORMANCE' in table.get_text():
+                rows = table.find_all('tr')
+                if len(rows) > 1:
+                    headers = [cell.get_text(strip=True) for cell in rows[0].find_all('td')]
+                    for row in rows[1:]:
+                        values = [cell.get_text(strip=True) for cell in row.find_all('td')]
+                        subject = dict(zip(headers, values))
+                        subjects.append(subject)
+                break
+        return subjects
+
+    def parse_student_results(self, soup):
+        students = []
+        tables = soup.find_all('table')
+        for table in tables:
+            if 'CNO' in table.get_text() and 'SEX' in table.get_text() and 'AGGT' in table.get_text() and 'DIV' in table.get_text() and 'DETAILED SUBJECTS' in table.get_text():
+                rows = table.find_all('tr')
+                for row in rows[1:]:  # Skip header
+                    cells = row.find_all('td')
+                    if len(cells) >= 5:
+                        cno = cells[0].get_text(strip=True)
+                        sex = cells[1].get_text(strip=True)
+                        aggt = cells[2].get_text(strip=True)
+                        div = cells[3].get_text(strip=True)
+                        subjects = cells[4].get_text(strip=True)
+                        students.append({
+                            'CNO': cno,
+                            'SEX': sex,
+                            'AGGT': aggt,
+                            'DIV': div,
+                            'DETAILED SUBJECTS': subjects
+                        })
+                break
+        return students
+
+    def parse_school_region(self, soup, school_name):
+        # Try to extract region from the page content
+        text = soup.get_text()
+        
+        # Common Tanzanian regions to look for
+        tanzania_regions = [
+            "Dar es Salaam", "Arusha", "Dodoma", "Mwanza", "Mbeya", "Tanga", "Morogoro",
+            "Kagera", "Mtwara", "Kilimanjaro", "Tabora", "Singida", "Rukwa", "Kigoma",
+            "Shinyanga", "Mara", "Manyara", "Ruvuma", "Lindi", "Pwani", "Geita", "Katavi",
+            "Njombe", "Simiyu", "Songwe", "Iringa"
+        ]
+        
+        # Look for region patterns in the text
+        region = "Unknown"
+        for reg in tanzania_regions:
+            if reg.lower() in text.lower():
+                region = reg
+                break
+        
+        # If region not found in text, try to infer from school name
+        if region == "Unknown":
+            for reg in tanzania_regions:
+                if reg.lower() in school_name.lower():
+                    region = reg
+                    break
+        
+        return region
 
     def handle(self, *args, **options):
         exam = options["exam"].lower()
@@ -136,11 +172,9 @@ class Command(BaseCommand):
 
         soup = BeautifulSoup(resp.text, "html.parser")
         
-        # Filter out index files and other non-school links
         valid_links = []
         for link in soup.find_all("a", href=True):
             href = link["href"]
-            # Skip index files and look for school result files
             if (href.endswith('.htm') and 
                 not href.startswith('index_') and
                 not href == 'index.htm' and
@@ -148,19 +182,18 @@ class Command(BaseCommand):
                 valid_links.append(link)
         
         if not valid_links:
-            # Try to debug by saving the HTML content
             with open("debug_page.html", "w", encoding="utf-8") as f:
                 f.write(resp.text)
             raise CommandError("No school result links found. The page structure may have changed. Saved page content to debug_page.html for inspection.")
 
         self.stdout.write(f"Found {len(valid_links)} schools. Scraping results...")
 
+        all_results = []
+
         for link in valid_links:
             href = link["href"]
-            # Fix URL formatting - replace backslashes with forward slashes if needed
             href = href.replace('\\', '/')
             
-            # Construct the full URL
             if href.startswith(('http://', 'https://')):
                 school_url = href
             else:
@@ -168,19 +201,16 @@ class Command(BaseCommand):
             
             school_text = link.text.strip()
 
-            # Extract school code and name
             parts = school_text.split(maxsplit=1)
             if len(parts) < 2:
-                code = os.path.splitext(href)[0].upper()  # Use the filename without extension as code
+                code = os.path.splitext(href)[0].upper()
                 name = school_text
             else:
                 code, name = parts[0], parts[1]
 
-            # Skip index files and non-S schools
             if 'index' in code.lower() or not code.startswith('S'):
                 continue
 
-            # Fetch school page
             try:
                 sresp = requests.get(school_url, timeout=30)
                 sresp.raise_for_status()
@@ -190,13 +220,38 @@ class Command(BaseCommand):
 
             ssoup = BeautifulSoup(sresp.text, "html.parser")
             
-            # Parse division summary using the new method
             div_counts = self.parse_division_summary(ssoup)
+            overall = self.parse_overall_performance(ssoup)
+            division_perf = self.parse_division_performance(ssoup)
+            subjects = self.parse_subjects_performance(ssoup)
+            students = self.parse_student_results(ssoup)
             
-            total = sum(div_counts.values()) or 1
-            gpa = self.calculate_gpa(div_counts)
+            # Extract region information
+            region = self.parse_school_region(ssoup, name)
+            
+            gpa_str = overall.get('EXAMINATION CENTRE GPA', '')
+            gpa_match = re.search(r'([\d.]+)', gpa_str)
+            gpa = float(gpa_match.group(1)) if gpa_match else None
+            
+            if gpa is None:
+                self.stdout.write(self.style.WARNING(f"⚠️ GPA not found for {code} {name}, skipping."))
+                continue
 
-            school, _ = School.objects.get_or_create(code=code, defaults={"name": name})
+            total = int(division_perf.get('CLEAN', sum(div_counts.values()))) or 1
+
+            school, _ = School.objects.get_or_create(
+                code=code, 
+                defaults={
+                    "name": name,
+                    "region": region
+                }
+            )
+            
+            # Update region if it was previously unknown
+            if school.region == "Unknown" and region != "Unknown":
+                school.region = region
+                school.save()
+
             ExamResult.objects.update_or_create(
                 school=school,
                 exam=exam.upper(),
@@ -212,6 +267,35 @@ class Command(BaseCommand):
                 },
             )
 
-            self.stdout.write(f" → {code} {name} (Div I: {div_counts['I']}, II: {div_counts['II']}, III: {div_counts['III']}, IV: {div_counts['IV']}, 0: {div_counts['0']}, Total: {total}, GPA: {gpa:.2f})")
+            # Store result for ranking later
+            all_results.append({
+                "code": code,
+                "name": name,
+                "region": region,
+                "gpa": gpa,
+                "div1": div_counts["I"],
+                "div2": div_counts["II"],
+                "div3": div_counts["III"],
+                "div4": div_counts["IV"],
+                "div0": div_counts["0"],
+                "total": total
+            })
+
+            self.stdout.write(f" → {code} {name} (Region: {region}, Div I: {div_counts['I']}, II: {div_counts['II']}, III: {div_counts['III']}, IV: {div_counts['IV']}, 0: {div_counts['0']}, Total: {total}, GPA: {gpa})")
 
         self.stdout.write(self.style.SUCCESS("✅ Scraping finished."))
+
+        # Rank schools by GPA
+        all_results.sort(key=lambda x: x["gpa"])
+        self.stdout.write("\nRanking schools by GPA (lower is better):")
+        for rank, result in enumerate(all_results, start=1):
+            self.stdout.write(f"{rank}. {result['code']} {result['name']} (Region: {result['region']}) - GPA: {result['gpa']}")
+
+        # Save results to a text file
+        with open(f"school_results_{year}_{exam}.txt", "w", encoding="utf-8") as f:
+            f.write("Rank. School Code School Name - Region - GPA\n")
+            f.write("="*80 + "\n")
+            for rank, result in enumerate(all_results, start=1):
+                f.write(f"{rank}. {result['code']} {result['name']} - {result['region']} - GPA: {result['gpa']}\n")
+
+        self.stdout.write(self.style.SUCCESS(f"✅ Results saved to school_results_{year}_{exam}.txt"))

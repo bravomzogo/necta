@@ -1,669 +1,397 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>{{ exam_type }} Rankings {{ year }}</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
- <style>
-    :root {
-      --primary: #1a237e;
-      --primary-light: #534bae;
-      --primary-dark: #000051;
-      --secondary: #00bcd4;
-      --secondary-light: #62efff;
-      --secondary-dark: #008ba3;
-      --accent: #ff4081;
-      --light: #f5f5f7;
-      --dark: #121212;
-      --success: #00c853;
-      --warning: #ffab00;
-      --text: #212121;
-      --text-light: #757575;
-      --card-bg: rgba(255, 255, 255, 0.92);
-      --glass-bg: rgba(255, 255, 255, 0.15);
-      --glass-border: rgba(255, 255, 255, 0.2);
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Rankings - {{ exam_type }} {{ year }} - NECTA Results{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Rankings specific styles using base template's CSS variables */
+    .ranking-table {
+        font-size: 0.9rem;
+        color: var(--text-color);
     }
     
-    * {
-      box-sizing: border-box;
+    .ranking-table th {
+        background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: none;
     }
     
-    body { 
-      font-family: "Poppins", "Segoe UI", system-ui, Arial, sans-serif; 
-      margin: 0;
-      padding: 20px;
-      background: linear-gradient(-45deg, #1a237e, #311b92, #006064, #00897b);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
-      color: var(--text);
-      min-height: 100vh;
+    .ranking-table td {
+        border-color: var(--border-color);
     }
     
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    .ranking-table tr.top-school {
+        background-color: rgba(35, 134, 54, 0.15);
+        transition: background-color 0.3s ease;
     }
     
-    .container {
-      max-width: 1300px;
-      margin: 0 auto;
-      background: var(--card-bg);
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      animation: fadeIn 0.8s ease-in-out;
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
+    .ranking-table tr.top-school:hover {
+        background-color: rgba(35, 134, 54, 0.3);
     }
     
-    h2 { 
-      text-align: center;
-      color: var(--primary);
-      margin-bottom: 8px;
-      font-size: 2.2rem;
-      background: linear-gradient(to right, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    .ranking-table tr:hover:not(.top-school) {
+        background-color: rgba(0, 0, 0, 0.03);
     }
     
-    .subtitle {
-      text-align: center;
-      color: var(--text-light);
-      font-size: 1.1rem;
-      margin-bottom: 25px;
+    .gpa-cell {
+        font-weight: 600;
+        color: var(--accent);
     }
     
-    .note { 
-      text-align: center; 
-      font-size: 0.95rem; 
-      color: var(--text);
-      margin: 0 auto 30px auto;
-      max-width: 850px;
-      padding: 15px 20px;
-      background: rgba(255, 255, 255, 0.7);
-      border-left: 4px solid var(--secondary);
-      border-radius: 10px;
-      backdrop-filter: blur(5px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    .division-cell {
+        text-align: center;
+        font-weight: 500;
+    }
+
+    /* School links */
+    .ranking-table td a {
+        color: var(--text-color);
+        text-decoration: none;
     }
     
     .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 20px;
-      margin-bottom: 40px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
     }
     
     .stat-card {
-      background: var(--card-bg);
-      padding: 25px 20px;
-      border-radius: 16px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      text-align: center;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(5px);
-      border: 1px solid var(--glass-border);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 5px;
-      height: 100%;
-      background: linear-gradient(to bottom, var(--secondary), var(--primary));
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
     .stat-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        border-color: var(--accent);
     }
     
     .stat-number {
-      font-size: 2.5rem;
-      font-weight: bold;
-      color: var(--primary);
-      margin-bottom: 8px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        font-size: 1.9rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
     }
     
     .stat-label {
-      color: var(--text-light);
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+        font-size: 0.8rem;
+        color: var(--muted-text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
-    .chart-container {
-      margin: 40px 0;
-      position: relative;
-      height: 450px;
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 25px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      backdrop-filter: blur(5px);
-      border: 1px solid var(--glass-border);
+    .filter-card {
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     
-    table { 
-      width: 100%; 
-      margin: 30px 0;
-      border-collapse: collapse;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      border-radius: 16px;
-      overflow: hidden;
-      background: var(--card-bg);
-      backdrop-filter: blur(5px);
-      border: 1px solid var(--glass-border);
+    .export-buttons {
+        margin: 1.5rem 0;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    .alert-warning {
+        background-color: rgba(212, 167, 44, 0.15);
+        border: 1px solid rgba(212, 167, 44, 0.3);
+        color: #b68c2a;
+    }
+
+    /* Dark mode adjustments */
+    body.dark-mode .ranking-table td {
+        color: #292626ff; /* bright text in dark mode */
     }
     
-    th, td { 
-      border: 1px solid rgba(221, 221, 221, 0.5); 
-      padding: 16px; 
-      text-align: center;
+    body.dark-mode .ranking-table td a {
+        color: #252323ff; /* school links white in dark mode */
     }
     
-    th { 
-      background: var(--primary); 
-      color: white; 
-      position: sticky;
-      top: 0;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.9rem;
-      letter-spacing: 0.5px;
+    body.dark-mode .ranking-table th {
+        color: #fff; /* header text fully white */
+    }
+
+    body.dark-mode .ranking-table tr:hover:not(.top-school) {
+        background-color: rgba(255, 255, 255, 0.05);
     }
     
-    td {
-      font-size: 0.95rem;
-      color: var(--text);
+    body.dark-mode .ranking-table tr.top-school {
+        background-color: rgba(35, 134, 54, 0.25);
     }
     
-    tr:nth-child(even) { background: rgba(245, 245, 245, 0.7); }
-    tr:hover { background: rgba(225, 245, 254, 0.7); }
-    
-    .rank { 
-      font-weight: bold; 
-      color: var(--primary);
-      font-size: 1.1rem;
+    body.dark-mode .ranking-table tr.top-school:hover {
+        background-color: rgba(35, 134, 54, 0.4);
     }
     
-    .school-name { 
-      text-align: left; 
-      font-weight: 600; 
+    body.dark-mode .alert-warning {
+        background-color: rgba(212, 167, 44, 0.2);
+        border: 1px solid rgba(212, 167, 44, 0.4);
+        color: #f0c674;
     }
-    
-    .top-3 { 
-      background: linear-gradient(135deg, rgba(255, 234, 167, 0.3), rgba(250, 177, 160, 0.3)) !important;
-      border-left: 4px solid #fdcb6e;
-    }
-    
-    .top-1 { 
-      background: linear-gradient(135deg, rgba(253, 203, 110, 0.4), rgba(225, 112, 85, 0.4)) !important; 
-      color: var(--text);
-      border-left: 4px solid #e17055;
-      font-weight: bold;
-    }
-    
-    .filters {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 25px 0;
-      flex-wrap: wrap;
-      gap: 15px;
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      backdrop-filter: blur(5px);
-      border: 1px solid var(--glass-border);
-    }
-    
-    .search-box {
-      flex: 1;
-      min-width: 220px;
-      position: relative;
-    }
-    
-    .search-box input {
-      width: 100%;
-      padding: 14px 20px 14px 45px;
-      border: 1px solid #ddd;
-      border-radius: 50px;
-      font-size: 1rem;
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      transition: all 0.3s;
-    }
-    
-    .search-box input:focus {
-      outline: none;
-      border-color: var(--secondary);
-      box-shadow: 0 4px 15px rgba(0, 188, 212, 0.2);
-    }
-    
-    .search-box i {
-      position: absolute;
-      left: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-light);
-    }
-    
-    .pagination {
-      display: flex;
-      justify-content: center;
-      margin: 30px 0 10px 0;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    
-    .pagination a {
-      padding: 10px 18px;
-      text-decoration: none;
-      border: 1px solid #ddd;
-      border-radius: 50px;
-      color: var(--primary);
-      transition: all 0.3s;
-      background: white;
-      font-weight: 500;
-    }
-    
-    .pagination a:hover {
-      background: var(--secondary);
-      color: white;
-      border-color: var(--secondary);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 188, 212, 0.3);
-    }
-    
-    .pagination a.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-    
+
     @media (max-width: 768px) {
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      table {
-        font-size: 0.85rem;
-      }
-      
-      th, td {
-        padding: 12px 8px;
-      }
-      
-      .container {
-        padding: 20px;
-      }
-      
-      .chart-container {
-        height: 350px;
-        padding: 15px;
-      }
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    /* Animated background elements */
-    .bg-animation {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      overflow: hidden;
-    }
-    
-    .bg-bubbles {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-    }
-    
-    .bg-bubbles li {
-      position: absolute;
-      list-style: none;
-      display: block;
-      width: 40px;
-      height: 40px;
-      background-color: rgba(255, 255, 255, 0.15);
-      bottom: -160px;
-      border-radius: 50%;
-      animation: square 25s infinite;
-      transition-timing-function: linear;
-    }
-    
-    .bg-bubbles li:nth-child(1) {
-      left: 10%;
-      animation-delay: 0s;
-      width: 80px;
-      height: 80px;
-    }
-    
-    .bg-bubbles li:nth-child(2) {
-      left: 20%;
-      animation-delay: 2s;
-      animation-duration: 17s;
-      width: 60px;
-      height: 60px;
-    }
-    
-    .bg-bubbles li:nth-child(3) {
-      left: 25%;
-      animation-delay: 4s;
-      width: 120px;
-      height: 120px;
-    }
-    
-    .bg-bubbles li:nth-child(4) {
-      left: 40%;
-      animation-delay: 0s;
-      animation-duration: 22s;
-      width: 160px;
-      height: 160px;
-    }
-    
-    .bg-bubbles li:nth-child(5) {
-      left: 70%;
-      animation-delay: 3s;
-      width: 100px;
-      height: 100px;
-    }
-    
-    @keyframes square {
-      0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 1;
-        border-radius: 50%;
-      }
-      100% {
-        transform: translateY(-1000px) rotate(720deg);
-        opacity: 0;
-        borderRadius: 10%;
-      }
-    }
-    
-    .floating {
-      animation: float 6s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-      100% { transform: translateY(0px); }
-    }
-  </style>
-</head>
-<body>
-  <!-- Animated Background -->
-  <div class="bg-animation">
-    <ul class="bg-bubbles">
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-    </ul>
-  </div>
-
-  <div class="container">
-    <h2>{{ exam_type }} School Rankings — {{ year }}</h2>
-    <div class="subtitle">Comprehensive performance analysis of Tanzanian secondary schools</div>
-    
-    <div class="note">
-      <i class="fas fa-info-circle"></i> Ranked by <strong>GPA (Grade Point Average)</strong> from NECTA "Division Performance Summary" (lower is better). 
-      Ties broken by more candidates. Division I = 1.0 point, II = 2.0, III = 3.0, IV = 4.0, 0 = 4.0.
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="stats-grid">
-      <div class="stat-card floating">
-        <div class="stat-number">{{ total_schools }}</div>
-        <div class="stat-label">Total Schools</div>
-      </div>
-      <div class="stat-card floating" style="animation-delay: 0.5s;">
-        <div class="stat-number">{{ total_students }}</div>
-        <div class="stat-label">Total Candidates</div>
-      </div>
-      <div class="stat-card floating" style="animation-delay: 1s;">
-        <div class="stat-number">{{ avg_gpa_all|floatformat:2 }}</div>
-        <div class="stat-label">National Avg GPA</div>
-      </div>
-      <div class="stat-card floating" style="animation-delay: 1.5s;">
-        <div class="stat-number">{{ best_gpa|floatformat:2 }}</div>
-        <div class="stat-label">Best School GPA</div>
-      </div>
-    </div>
-
-    <!-- Division Distribution Chart -->
-    <div class="chart-container">
-      <canvas id="divisionChart"></canvas>
-    </div>
-
-    <!-- Performance Distribution Chart -->
-    <div class="chart-container">
-      <canvas id="performanceChart"></canvas>
-    </div>
-
-    <!-- Filters -->
-    <div class="filters">
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" id="searchInput" placeholder="Search schools...">
-      </div>
-    </div>
-
-    <!-- Rankings Table -->
-    <table>
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>School</th>
-          <th>Center #</th>
-          <th>GPA</th>
-          <th>Candidates</th>
-          <th>Div I</th>
-          <th>Div II</th>
-          <th>Div III</th>
-          <th>Div IV</th>
-          <th>Div 0</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in results %}
-          <tr class="{% if forloop.counter <= 3 %}top-{% if forloop.counter == 1 %}1{% else %}3{% endif %}{% endif %}">
-            <td class="rank">{{ forloop.counter }}</td>
-            <td class="school-name">{{ r.school.name }}</td>
-            <td>{{ r.school.code }}</td>
-            <td><strong>{{ r.gpa|floatformat:2 }}</strong></td>
-            <td>{{ r.total }}</td>
-            <td>{{ r.division1 }}</td>
-            <td>{{ r.division2 }}</td>
-            <td>{{ r.division3 }}</td>
-            <td>{{ r.division4 }}</td>
-            <td>{{ r.division0 }}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="10">No results available. Run the scraper to collect data.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <!-- Pagination -->
-    <div class="pagination">
-      <a href="#"><i class="fas fa-chevron-left"></i> Prev</a>
-      <a href="#" class="active">1</a>
-      <a href="#">2</a>
-      <a href="#">3</a>
-      <a href="#">Next <i class="fas fa-chevron-right"></i></a>
-    </div>
-  </div>
-
-  <script>
-    // Division Distribution Data
-    const divisionData = {
-      labels: ['Division I', 'Division II', 'Division III', 'Division IV', 'Division 0'],
-      datasets: [{
-        label: 'Number of Students',
-        data: [{{ division1_total }}, {{ division2_total }}, {{ division3_total }}, {{ division4_total }}, {{ division0_total }}],
-        backgroundColor: [
-          '#27ae60', '#f39c12', '#3498db', '#e74c3c', '#95a5a6'
-        ],
-        borderWidth: 1,
-        hoverOffset: 15
-      }]
-    };
-
-    // Performance Distribution Data
-    const performanceData = {
-      labels: ['1.0-2.0 GPA', '2.1-3.0 GPA', '3.1-4.0 GPA', '4.0+ GPA'],
-      datasets: [{
-        label: 'Number of Schools',
-        data: [{{ gpa_1_2 }}, {{ gpa_2_3 }}, {{ gpa_3_4 }}, {{ gpa_4_plus }}],
-        backgroundColor: [
-          'rgba(46, 204, 113, 0.7)',  // Green for best
-          'rgba(52, 152, 219, 0.7)',  // Blue for good
-          'rgba(241, 196, 15, 0.7)',  // Yellow for average
-          'rgba(231, 76, 60, 0.7)'    // Red for worst
-        ],
-        borderColor: [
-          'rgb(46, 204, 113)',
-          'rgb(52, 152, 219)',
-          'rgb(241, 196, 15)',
-          'rgb(231, 76, 60)'
-        ],
-        borderWidth: 2,
-        borderRadius: 6,
-        hoverBackgroundColor: [
-          'rgb(46, 204, 113)',
-          'rgb(52, 152, 219)',
-          'rgb(241, 196, 15)',
-          'rgb(231, 76, 60)'
-        ]
-      }]
-    };
-
-    // Create Division Distribution Chart
-    new Chart(document.getElementById('divisionChart'), {
-      type: 'doughnut',
-      data: divisionData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: true,
-            text: 'National Division Distribution',
-            font: { size: 18, weight: 'bold' },
-            color: '#333'
-          },
-          legend: {
-            position: 'right',
-            labels: {
-              font: { size: 13 },
-              color: '#333'
-            }
-          }
-        },
-        animation: {
-          animateScale: true,
-          animateRotate: true
+        .ranking-table {
+            font-size: 0.8rem;
         }
-      }
-    });
-
-    // Create Performance Distribution Chart
-    new Chart(document.getElementById('performanceChart'), {
-      type: 'bar',
-      data: performanceData,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: true,
-            text: 'School Performance Distribution (GPA) - Lower is Better',
-            font: { size: 18, weight: 'bold' },
-            color: '#333'
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Number of Schools',
-              color: '#555',
-              font: { weight: 'bold' }
-            },
-            grid: {
-              color: 'rgba(0, 0, 0, 0.05)'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'GPA Range (Lower is Better)',
-              color: '#555',
-              font: { weight: 'bold' }
-            },
-            grid: {
-              display: false
-            }
-          }
-        },
-        animation: {
-          duration: 2000,
-          easing: 'easeOutQuart'
-        }
-      }
-    });
-
-    // Search functionality
-    document.addEventListener('DOMContentLoaded', function() {
-      const rows = document.querySelectorAll('tbody tr');
-      const searchInput = document.getElementById('searchInput');
-      
-      searchInput.addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
         
-        rows.forEach(row => {
-          const schoolName = row.querySelector('.school-name')?.textContent.toLowerCase() || '';
-          const schoolCode = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
-          
-          if (schoolName.includes(searchTerm) || schoolCode.includes(searchTerm)) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">
+            <i class="fas fa-trophy me-2" style="color: var(--accent);"></i>{{ exam_type }} {{ year }} Rankings
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                <li class="breadcrumb-item active">{{ exam_type }} {{ year }}</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{% url 'home' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-card">
+    <div class="row">
+        <div class="col-md-4 mb-2">
+            <label class="form-label">Filter by Region</label>
+            <select class="form-select" id="regionFilter">
+                <option value="">All Regions</option>
+                {% for region in regions %}
+                <option value="{{ region }}">{{ region }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5 mb-2">
+            <label class="form-label">Search Schools</label>
+            <div class="input-group">
+                <span class="input-group-text" style="background-color: var(--secondary-bg); color: var(--text-color);">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by school name or code...">
+            </div>
+        </div>
+        <div class="col-md-3 mb-2 d-flex align-items-end">
+            <button class="btn btn-outline-secondary w-100" id="resetFilters">
+                <i class="fas fa-refresh me-1"></i>Reset Filters
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_schools|intcomma }}</div>
+        <div class="stat-label">Total Schools</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_students|intcomma }}</div>
+        <div class="stat-label">Total Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ avg_gpa_all }}</div>
+        <div class="stat-label">Average GPA</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ best_gpa }}</div>
+        <div class="stat-label">Best GPA</div>
+    </div>
+</div>
+
+<!-- Export Buttons -->
+<div class="export-buttons d-flex justify-content-between align-items-center">
+    <div>
+        <span class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Showing <strong id="visibleCount">{{ results|length }}</strong> of {{ results|length }} schools
+        </span>
+    </div>
+    <div>
+        <button class="btn btn-outline-success me-2" onclick="exportTableToCSV('rankings.csv')">
+            <i class="fas fa-download me-1"></i>Export CSV
+        </button>
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i>Print
+        </button>
+    </div>
+</div>
+
+<!-- Rankings Table -->
+<div class="card mt-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover ranking-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th width="80">Rank</th>
+                        <th width="100">School Code</th>
+                        <th>School Name</th>
+                        <th width="120">Region</th>
+                        <th width="100">GPA</th>
+                        <th width="80" class="text-center">Div I</th>
+                        <th width="80" class="text-center">Div II</th>
+                        <th width="80" class="text-center">Div III</th>
+                        <th width="80" class="text-center">Div IV</th>
+                        <th width="80" class="text-center">Div 0</th>
+                        <th width="90" class="text-center">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr class="{% if result.rank <= 10 %}top-school{% endif %}">
+                        <td>
+                            <span class="badge {% if result.rank == 1 %}bg-warning text-dark{% elif result.rank <= 3 %}bg-secondary{% elif result.rank <= 10 %}bg-primary{% else %}bg-dark text-light{% endif %}">
+                                {{ result.rank }}
+                            </span>
+                        </td>
+                        <td><strong>{{ result.school.code }}</strong></td>
+                        <td>
+                            <a href="{% url 'school_detail' result.school.id %}" class="text-decoration-none">
+                                {{ result.school.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: var(--accent); color: #000;">{{ result.school.region }}</span>
+                        </td>
+                        <td class="gpa-cell">{{ result.gpa|floatformat:4 }}</td>
+                        <td class="division-cell">{{ result.division1 }}</td>
+                        <td class="division-cell">{{ result.division2 }}</td>
+                        <td class="division-cell">{{ result.division3 }}</td>
+                        <td class="division-cell">{{ result.division4 }}</td>
+                        <td class="division-cell text-danger">{{ result.division0 }}</td>
+                        <td class="division-cell fw-bold">{{ result.total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- No results message (hidden by default) -->
+<div class="alert alert-warning d-none mt-3" id="noResultsMessage">
+    <i class="fas fa-exclamation-triangle me-2"></i>No schools match your current filters.
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filter functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const regionFilter = document.getElementById('regionFilter');
+        const searchInput = document.getElementById('searchInput');
+        const resetButton = document.getElementById('resetFilters');
+        const rows = document.querySelectorAll('.ranking-table tbody tr');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        const visibleCount = document.getElementById('visibleCount');
+        
+        function filterTable() {
+            const regionValue = regionFilter.value.toLowerCase();
+            const searchValue = searchInput.value.toLowerCase();
+            let visibleRows = 0;
+            
+            rows.forEach(row => {
+                const schoolName = row.cells[2].textContent.toLowerCase();
+                const schoolCode = row.cells[1].textContent.toLowerCase();
+                const region = row.cells[3].textContent.toLowerCase();
+                
+                const matchesRegion = regionValue === '' || region.includes(regionValue);
+                const matchesSearch = searchValue === '' || 
+                                    schoolName.includes(searchValue) || 
+                                    schoolCode.includes(searchValue);
+                
+                if (matchesRegion && matchesSearch) {
+                    row.style.display = '';
+                    visibleRows++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update visible count
+            visibleCount.textContent = visibleRows;
+            
+            // Show/hide no results message
+            if (visibleRows === 0) {
+                noResultsMessage.classList.remove('d-none');
+            } else {
+                noResultsMessage.classList.add('d-none');
+            }
+        }
+        
+        regionFilter.addEventListener('change', filterTable);
+        searchInput.addEventListener('keyup', filterTable);
+        
+        resetButton.addEventListener('click', function() {
+            regionFilter.value = '';
+            searchInput.value = '';
+            filterTable();
         });
-      });
-      
-      // Add floating animation to stat cards
-      const statCards = document.querySelectorAll('.stat-card');
-      statCards.forEach((card, index) => {
-        card.style.animationDelay = `${index * 0.3}s`;
-      });
+        
+        // Initial filter to count visible rows
+        filterTable();
     });
-  </script>
-</body>
-</html>
+
+    // Export to CSV function
+    function exportTableToCSV(filename) {
+        const csv = [];
+        const rows = document.querySelectorAll('table tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            
+            for (let j = 0; j < cols.length; j++) {
+                let text = cols[j].innerText;
+                // Handle commas in text
+                text = text.replace(/"/g, '""');
+                row.push('"' + text + '"');
+            }
+            
+            csv.push(row.join(','));
+        }
+        
+        // Download CSV file
+        const csvString = csv.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+{% endblock %}

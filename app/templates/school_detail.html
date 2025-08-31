@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ school.name }} - Details - NECTA Results{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+
+    /* Header */
+    .school-header {
+        background: linear-gradient(135deg, #2c2c54, #40407a);
+        color: #f5f6fa;
+        padding: 2rem;
+        border-radius: 14px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+    .school-header h1 {
+        color: #dfe6e9;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.2rem;
+        margin: 1.5rem 0;
+    }
+    .stat-card {
+        background: #1e1e2f;
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+    }
+    .stat-number {
+        font-size: 1.9rem;
+        font-weight: 800;
+        color: #74b9ff;
+        margin-bottom: 0.5rem;
+    }
+    .stat-label {
+        font-size: 0.85rem;
+        color: #b2bec3;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Table */
+    .results-table {
+        font-size: 0.9rem;
+        background: #1c1c28;
+        color: #f1f2f6;
+    }
+    .results-table th {
+        background: linear-gradient(135deg, #6c5ce7, #00cec9);
+        color: #fff;
+    }
+    .results-table tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Charts */
+    .chart-container {
+        background: #1e1e2f;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+        background: none;
+        padding: 0;
+        margin-bottom: 1.5rem;
+    }
+    .breadcrumb a {
+        color: #74b9ff;
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    /* Button */
+    .btn-primary {
+        background: linear-gradient(135deg, #6c5ce7, #00cec9);
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    }
+    .btn-primary:hover {
+        opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+        .stat-number { font-size: 1.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'school_rankings' 'ACSEE' 2023 %}">ACSEE 2023 Rankings</a></li>
+        <li class="breadcrumb-item active text-light" aria-current="page">{{ school.name }}</li>
+    </ol>
+</nav>
+
+<!-- School Header -->
+<div class="school-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold mb-2">{{ school.name }}</h1>
+            <p class="mb-1"><strong>Code:</strong> {{ school.code }}</p>
+            <p class="mb-0"><strong>Region:</strong> {{ school.region }}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="badge bg-dark text-light fs-6 shadow-sm">
+                <i class="fas fa-clipboard-list me-1"></i>{{ results|length }} Records
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <canvas id="gpaChart" height="250"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <canvas id="divisionChart" height="250"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Exam Results -->
+<div class="card bg-dark border-0 shadow-sm mt-3">
+    <div class="card-header bg-gradient text-white fw-bold">
+        <i class="fas fa-history me-2"></i> Exam Results History
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover results-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Exam Type</th>
+                        <th>GPA</th>
+                        <th class="text-center">Div I</th>
+                        <th class="text-center">Div II</th>
+                        <th class="text-center">Div III</th>
+                        <th class="text-center">Div IV</th>
+                        <th class="text-center">Div 0</th>
+                        <th class="text-center">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr>
+                        <td><strong>{{ result.year }}</strong></td>
+                        <td>{{ result.exam }}</td>
+                        <td class="fw-bold text-info">{{ result.gpa|floatformat:4 }}</td>
+                        <td class="text-center text-success">{{ result.division1 }}</td>
+                        <td class="text-center text-primary">{{ result.division2 }}</td>
+                        <td class="text-center text-warning">{{ result.division3 }}</td>
+                        <td class="text-center text-muted">{{ result.division4 }}</td>
+                        <td class="text-center text-danger">{{ result.division0 }}</td>
+                        <td class="text-center fw-bold text-light">{{ result.total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Back Button -->
+<div class="text-center mt-4">
+    <a href="{% url 'school_rankings' 'ACSEE' 2023 %}" class="btn btn-primary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Rankings
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // GPA Chart
+    const gpaCtx = document.getElementById('gpaChart').getContext('2d');
+    new Chart(gpaCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for result in results %}'{{ result.year }} {{ result.exam }}',{% endfor %}],
+            datasets: [{
+                label: 'GPA Trend',
+                data: [{% for result in results %}{{ result.gpa }},{% endfor %}],
+                borderColor: '#74b9ff',
+                backgroundColor: 'rgba(116,185,255,0.15)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            plugins: {
+                title: { display: true, text: 'GPA Trend Over Time', color: '#fff' },
+                legend: { labels: { color: '#ccc' } }
+            },
+            scales: {
+                y: { reverse: true, ticks: { color: '#ccc' } },
+                x: { ticks: { color: '#ccc' } }
+            }
+        }
+    });
+
+    // Division Chart
+    {% with latest_result=results.first %}
+    const divisionCtx = document.getElementById('divisionChart').getContext('2d');
+    new Chart(divisionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Div I','Div II','Div III','Div IV','Div 0'],
+            datasets: [{
+                data: [
+                    {{ latest_result.division1 }},
+                    {{ latest_result.division2 }},
+                    {{ latest_result.division3 }},
+                    {{ latest_result.division4 }},
+                    {{ latest_result.division0 }}
+                ],
+                backgroundColor: [
+                    '#00b894','#0984e3','#fdcb6e','#e17055','#d63031'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                title: { display: true, text: 'Division Distribution ({{ latest_result.year }} {{ latest_result.exam }})', color: '#fff' },
+                legend: { position: 'right', labels: { color: '#ccc' } }
+            }
+        }
+    });
+    {% endwith %}
+</script>
+{% endblock %}

@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ region }} Rankings - {{ exam_type }} {{ year }} - NECTA Results{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Region Header */
+    .region-header {
+        background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+        color: #fff;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .stat-card {
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        border-color: var(--accent);
+    }
+    
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--muted-text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Region Badge */
+    .region-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Rankings Table */
+    .ranking-table {
+        font-size: 0.9rem;
+        color: var(--text-color);
+    }
+    
+    .ranking-table th {
+        background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: none;
+    }
+    
+    .ranking-table td {
+        border-color: var(--border-color);
+    }
+    
+    .ranking-table tr.top-school {
+        background-color: rgba(35, 134, 54, 0.15);
+        transition: background-color 0.3s ease;
+    }
+    
+    .ranking-table tr.top-school:hover {
+        background-color: rgba(35, 134, 54, 0.3);
+    }
+    
+    .ranking-table tr:hover:not(.top-school) {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    .gpa-cell {
+        font-weight: 600;
+        color: var(--accent);
+    }
+    
+    .division-cell {
+        text-align: center;
+        font-weight: 500;
+    }
+
+    /* School links */
+    .ranking-table td a {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+    
+    .ranking-table td a:hover {
+        color: var(--accent);
+        text-decoration: underline;
+    }
+
+    /* Export Buttons */
+    .export-buttons .btn {
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .export-buttons .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Dark mode adjustments */
+    body.dark-mode .ranking-table td {
+        color: #444749ff;
+    }
+    
+    body.dark-mode .ranking-table td a {
+        color: #484b4eff;
+    }
+    
+    body.dark-mode .ranking-table th {
+        color: #fff;
+    }
+
+    body.dark-mode .ranking-table tr:hover:not(.top-school) {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    body.dark-mode .ranking-table tr.top-school {
+        background-color: rgba(35, 134, 54, 0.25);
+    }
+    
+    body.dark-mode .ranking-table tr.top-school:hover {
+        background-color: rgba(35, 134, 54, 0.4);
+    }
+
+    @media (max-width: 768px) {
+        .ranking-table {
+            font-size: 0.8rem;
+        }
+        
+        .stats-grid {
+            gap: 1rem;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+        }
+        
+        .region-header {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'school_rankings' exam_type year %}">{{ exam_type }} {{ year }} Rankings</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ region }}</li>
+    </ol>
+</nav>
+
+<!-- Region Header -->
+<div class="region-header">
+    <h1 class="display-5 fw-bold mb-2"><i class="fas fa-map-marker-alt me-2"></i>{{ region }} Region</h1>
+    <p class="lead mb-0">{{ exam_type }} Examination Results {{ year }}</p>
+    <span class="badge region-badge mt-3"><i></i>{{ results|length }} Schools</span>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    {% with total_students=0 %}
+        {% for result in results %}
+            {% with total_students=total_students|add:result.total %}{% endwith %}
+        {% endfor %}
+        {% with total_gpa=0 %}
+            {% for result in results %}
+                {% with total_gpa=total_gpa|add:result.gpa %}{% endwith %}
+            {% endfor %}
+            {% if results %}{% widthratio total_gpa 1 results|length as avg_gpa %}{% endif %}
+            <div class="stat-card">
+                <div class="stat-number">{{ results|length|intcomma }}</div>
+                <div class="stat-label">Schools in Region</div>
+            </div>
+            {% comment %} <div class="stat-card">
+                <div class="stat-number">{{ total_students|intcomma }}</div>
+                <div class="stat-label">Total Students</div>
+            </div> {% endcomment %}
+            {% comment %} <div class="stat-card">
+                <div class="stat-number">{% if results %}{{ avg_gpa|floatformat:2 }}{% else %}0.00{% endif %}</div>
+                <div class="stat-label">Average GPA</div>
+            </div> {% endcomment %}
+            <div class="stat-card">
+                <div class="stat-number">{% if results %}{{ results.0.gpa|floatformat:4 }}{% else %}0.0000{% endif %}</div>
+                <div class="stat-label">Best GPA</div>
+            </div>
+        {% endwith %}
+    {% endwith %}
+</div>
+
+<!-- Export Buttons -->
+<div class="export-buttons mb-3">
+    <button class="btn btn-outline-success me-2" onclick="exportTableToCSV('{{ region|slugify }}-rankings.csv')">
+        <i class="fas fa-download me-1"></i>Export CSV
+    </button>
+    <button class="btn btn-outline-primary me-2" onclick="window.print()">
+        <i class="fas fa-print me-1"></i>Print
+    </button>
+    <a href="{% url 'school_rankings' exam_type year %}" class="btn btn-outline-secondary">
+        <i class="fas fa-globe me-1"></i>View All Regions
+    </a>
+</div>
+
+<!-- Rankings Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-trophy me-2"></i>School Rankings in {{ region }}</span>
+        <div class="input-group" style="max-width: 280px;">
+            <span class="input-group-text" style="background-color: var(--secondary-bg); color: var(--text-color);">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Search schools...">
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover ranking-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Code</th>
+                        <th>School</th>
+                        <th>GPA</th>
+                        <th class="text-center">Div I</th>
+                        <th class="text-center">Div II</th>
+                        <th class="text-center">Div III</th>
+                        <th class="text-center">Div IV</th>
+                        <th class="text-center">Div 0</th>
+                        <th class="text-center">Total</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr class="{% if result.rank <= 5 %}top-school{% endif %}">
+                        <td>
+                            <span class="badge {% if result.rank == 1 %}bg-warning text-dark{% elif result.rank <= 3 %}bg-info{% elif result.rank <= 5 %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ result.rank }}
+                            </span>
+                        </td>
+                        <td><strong>{{ result.school.code }}</strong></td>
+                        <td>
+                            <a href="{% url 'school_detail' result.school.id %}" class="fw-bold text-decoration-none">
+                                {{ result.school.name }}
+                            </a>
+                        </td>
+                        <td class="gpa-cell">{{ result.gpa|floatformat:4 }}</td>
+                        <td class="division-cell">{{ result.division1 }}</td>
+                        <td class="division-cell">{{ result.division2 }}</td>
+                        <td class="division-cell">{{ result.division3 }}</td>
+                        <td class="division-cell">{{ result.division4 }}</td>
+                        <td class="division-cell text-danger">{{ result.division0 }}</td>
+                        <td class="division-cell fw-bold">{{ result.total }}</td>
+                        <td class="text-center">
+                            <a href="{% url 'school_detail' result.school.id %}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center py-4 text-muted">No schools found for {{ region }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Regional Comparison -->
+<div class="card mt-4">
+    <div class="card-header">
+        <i class="fas fa-globe me-2"></i>Browse Other Regions
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for other_region in regions %}
+                {% if other_region != region %}
+                <div class="col-md-3 col-sm-4 col-6 mb-2">
+                    <a href="{% url 'region_rankings' exam_type year other_region %}" class="btn btn-outline-primary btn-sm w-100 text-start">
+                        <i class="fas fa-arrow-right me-1"></i>{{ other_region }}
+                    </a>
+                </div>
+                {% endif %}
+            {% empty %}
+                <div class="col-12 text-center">
+                    <p class="text-muted">No other regions available</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Search filter
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const searchText = this.value.toLowerCase();
+        document.querySelectorAll('.ranking-table tbody tr').forEach(row => {
+            const name = row.cells[2]?.textContent.toLowerCase() || "";
+            const code = row.cells[1]?.textContent.toLowerCase() || "";
+            row.style.display = (name.includes(searchText) || code.includes(searchText)) ? "" : "none";
+        });
+    });
+
+    // Export CSV
+    function exportTableToCSV(filename) {
+        const rows = document.querySelectorAll('.ranking-table tr');
+        const csv = Array.from(rows).map(row => {
+            const cols = row.querySelectorAll('td, th');
+            return Array.from(cols).slice(0, -1).map(c => `"${c.innerText.replace(/"/g, '""')}"`).join(',');
+        }).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+    }
+</script>
+{% endblock %}
