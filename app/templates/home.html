@@ -118,7 +118,7 @@
         <div class="card h-100 top-schools-card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-trophy me-2 text-warning"></i>
+                    {% comment %} <i class="fas fa-trophy me-2 text-warning"></i> {% endcomment %}
                     <h5 class="mb-0">Top Performing Schools (ACSEE 2023)</h5>
                 </div>
                 <a href="{% url 'school_rankings' 'ACSEE' 2023 %}" class="btn btn-sm view-all-btn">
@@ -134,7 +134,7 @@
                                 {{ forloop.counter }}
                             </div>
                             <div class="flex-grow-1">
-                                <h6 class="mb-1 school-name">{{ result.school.name }}</h6>
+                                <h6 class="mb-1 school-name" style="color:rgba(38, 38, 41, 0.68)">{{ result.school.name }}</h6>
                                 <div class="school-details">
                                     <div class="school-region">
                                         <i class="fas fa-map-marker-alt me-1"></i>{{ result.school.region }}
@@ -165,9 +165,9 @@
                 <div>
                     <i class="fas fa-map me-2 text-success"></i>Browse by Region
                 </div>
-                <a href="#" class="btn btn-sm btn-outline-secondary">
+                {% comment %} <a href="#" class="btn btn-sm btn-outline-secondary">
                     View All <i class="fas fa-chevron-down ms-1"></i>
-                </a>
+                </a> {% endcomment %}
             </div>
             <div class="card-body">
                 <div class="row g-2">
@@ -334,6 +334,7 @@
         background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
         opacity: 0;
         transition: opacity 0.3s ease;
+        
     }
     
     .top-school-item:hover::before {
@@ -424,7 +425,7 @@
     }
     
     .view-all-btn {
-        background: rgba(212, 160, 23, 0.1);
+        background: rgba(54, 54, 58, 0.46);
         color: var(--accent);
         border: none;
         border-radius: 8px;
