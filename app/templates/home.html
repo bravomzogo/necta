@@ -19,7 +19,8 @@
                         </div>
                         <div class="card-body p-3 p-md-4">
                             <form method="get" action="{% url 'school_rankings' 'ACSEE' 2023 %}" id="rankingForm">
-                                <div class="row g-3 align-items-end">
+                                <!-- Desktop layout -->
+                                <div class="desktop-search-layout row g-3 align-items-end">
                                     <div class="col-md-5">
                                         <label for="exam_type" class="form-label text-muted small mb-1">
                                             <i class="fas fa-book me-1 text-primary"></i>Exam Type
@@ -59,7 +60,7 @@
                                 </div>
                                 
                                 <!-- Mobile alternative layout -->
-                                <div class="mobile-search-layout d-none">
+                                <div class="mobile-search-layout">
                                     <div class="mb-3">
                                         <label for="exam_type_mobile" class="form-label text-muted small mb-1">
                                             <i class="fas fa-book me-1 text-primary"></i>Exam Type
@@ -374,8 +375,8 @@
         }
         
         /* Hide desktop layout on mobile */
-        .search-card .row.g-3:not(.mobile-search-layout) {
-            display: none;
+        .desktop-search-layout {
+            display: none !important;
         }
         
         /* Show mobile layout */
@@ -403,6 +404,10 @@
     @media (min-width: 769px) {
         .mobile-search-layout {
             display: none !important;
+        }
+        
+        .desktop-search-layout {
+            display: flex !important;
         }
     }
     
@@ -655,33 +660,44 @@
 {% block extra_js %}
 <script>
     // Update form action when selections change
-    document.getElementById('exam_type').addEventListener('change', updateFormAction);
-    document.getElementById('year').addEventListener('change', updateFormAction);
-    document.getElementById('exam_type_mobile').addEventListener('change', updateFormAction);
-    document.getElementById('year_mobile').addEventListener('change', updateFormAction);
-    
-    function updateFormAction() {
-        const examType = document.getElementById('exam_type').value || document.getElementById('exam_type_mobile').value;
-        const year = document.getElementById('year').value || document.getElementById('year_mobile').value;
-        const form = document.getElementById('rankingForm');
-        form.action = `/rankings/${examType}/${year}/`;
-    }
-    
-    // Add animation to stats cards on scroll
     document.addEventListener('DOMContentLoaded', function() {
-        const statCards = document.querySelectorAll('.stat-card');
+        const desktopExam = document.getElementById('exam_type');
+        const desktopYear = document.getElementById('year');
+        const mobileExam = document.getElementById('exam_type_mobile');
+        const mobileYear = document.getElementById('year_mobile');
+        const form = document.getElementById('rankingForm');
         
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animated');
-                }
-            });
-        }, { threshold: 0.1 });
+        // Function to update form action based on current selections
+        function updateFormAction() {
+            // Determine which form elements are visible and use their values
+            let examType, year;
+            
+            // Check if mobile layout is visible
+            if (window.innerWidth <= 768) {
+                // Use mobile values
+                examType = mobileExam.value;
+                year = mobileYear.value;
+            } else {
+                // Use desktop values
+                examType = desktopExam.value;
+                year = desktopYear.value;
+            }
+            
+            // Update the form action
+            form.action = `/rankings/${examType}/${year}/`;
+        }
         
-        statCards.forEach(card => {
-            observer.observe(card);
-        });
+        // Add event listeners to all form elements
+        if (desktopExam) desktopExam.addEventListener('change', updateFormAction);
+        if (desktopYear) desktopYear.addEventListener('change', updateFormAction);
+        if (mobileExam) mobileExam.addEventListener('change', updateFormAction);
+        if (mobileYear) mobileYear.addEventListener('change', updateFormAction);
+        
+        // Also update on window resize in case user changes device orientation
+        window.addEventListener('resize', updateFormAction);
+        
+        // Initialize form action
+        updateFormAction();
         
         // Enhanced school item interactions
         const schoolItems = document.querySelectorAll('.top-school-item');
@@ -703,10 +719,12 @@
             if (mainSelect && mobileSelect) {
                 mainSelect.addEventListener('change', function() {
                     mobileSelect.value = this.value;
+                    updateFormAction(); // Update after syncing
                 });
                 
                 mobileSelect.addEventListener('change', function() {
                     mainSelect.value = this.value;
+                    updateFormAction(); // Update after syncing
                 });
             }
         }
