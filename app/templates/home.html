@@ -7,25 +7,28 @@
 <div class="row justify-content-center mb-5 animate-in">
     <div class="col-lg-10">
         <div class="card hero-card">
-            <div class="card-body text-center p-5">
+            <div class="card-body text-center p-4 p-md-5">
                 <h1 class="display-4 fw-bold mb-3">NECTA Results <span class="text-gradient">Ranking System</span></h1>
                 <p class="lead mb-4">Comprehensive analysis of school performance based on National Examination Council of Tanzania results</p>
                 
+                <!-- Updated Search Card -->
                 <div class="search-card mt-4">
-                    <div class="card">
-                        <div class="card-header bg-transparent border-0 pb-0">
+                    <div class="card search-main-card">
+                        <div class="card-header bg-transparent border-0 pb-0 text-center">
                             <h5 class="mb-0"><i class="fas fa-search me-2 text-primary"></i>Find School Rankings</h5>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-3 p-md-4">
                             <form method="get" action="{% url 'school_rankings' 'ACSEE' 2023 %}" id="rankingForm">
                                 <div class="row g-3 align-items-end">
                                     <div class="col-md-5">
                                         <label for="exam_type" class="form-label text-muted small mb-1">
                                             <i class="fas fa-book me-1 text-primary"></i>Exam Type
                                         </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-dark border-secondary"><i class="fas fa-graduation-cap"></i></span>
-                                            <select class="form-select bg-dark text-light border-secondary" name="exam_type" id="exam_type" required>
+                                        <div class="input-group input-group-search">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </span>
+                                            <select class="form-select" name="exam_type" id="exam_type" required>
                                                 {% for exam in exam_types %}
                                                 <option value="{{ exam }}" {% if exam == 'ACSEE' %}selected{% endif %}>{{ exam }}</option>
                                                 {% endfor %}
@@ -36,9 +39,11 @@
                                         <label for="year" class="form-label text-muted small mb-1">
                                             <i class="fas fa-calendar me-1 text-primary"></i>Year
                                         </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-dark border-secondary"><i class="fas fa-calendar-days"></i></span>
-                                            <select class="form-select bg-dark text-light border-secondary" name="year" id="year" required>
+                                        <div class="input-group input-group-search">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-calendar-days"></i>
+                                            </span>
+                                            <select class="form-select" name="year" id="year" required>
                                                 {% for year in years %}
                                                 <option value="{{ year }}" {% if year == 2023 %}selected{% endif %}>{{ year }}</option>
                                                 {% endfor %}
@@ -46,10 +51,50 @@
                                         </div>
                                     </div>
                                     <div class="col-md-2">
-                                        <button type="submit" class="btn btn-primary w-100 py-2">
-                                            <i class="fas fa-chart-line me-2"></i>View
+                                        <button type="submit" class="btn btn-primary w-100 search-submit-btn">
+                                            <span class="d-none d-md-inline"><i class="fas fa-chart-line me-1"></i>View</span>
+                                            <span class="d-md-none"><i class="fas fa-chart-line"></i></span>
                                         </button>
                                     </div>
+                                </div>
+                                
+                                <!-- Mobile alternative layout -->
+                                <div class="mobile-search-layout d-none">
+                                    <div class="mb-3">
+                                        <label for="exam_type_mobile" class="form-label text-muted small mb-1">
+                                            <i class="fas fa-book me-1 text-primary"></i>Exam Type
+                                        </label>
+                                        <div class="input-group input-group-search">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </span>
+                                            <select class="form-select" name="exam_type" id="exam_type_mobile" required>
+                                                {% for exam in exam_types %}
+                                                <option value="{{ exam }}" {% if exam == 'ACSEE' %}selected{% endif %}>{{ exam }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="year_mobile" class="form-label text-muted small mb-1">
+                                            <i class="fas fa-calendar me-1 text-primary"></i>Year
+                                        </label>
+                                        <div class="input-group input-group-search">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-calendar-days"></i>
+                                            </span>
+                                            <select class="form-select" name="year" id="year_mobile" required>
+                                                {% for year in years %}
+                                                <option value="{{ year }}" {% if year == 2023 %}selected{% endif %}>{{ year }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100 search-submit-btn py-3">
+                                        <i class="fas fa-chart-line me-2"></i>View Rankings
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -118,7 +163,6 @@
         <div class="card h-100 top-schools-card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    {% comment %} <i class="fas fa-trophy me-2 text-warning"></i> {% endcomment %}
                     <h5 class="mb-0">Top Performing Schools (ACSEE 2023)</h5>
                 </div>
                 <a href="{% url 'school_rankings' 'ACSEE' 2023 %}" class="btn btn-sm view-all-btn">
@@ -165,9 +209,6 @@
                 <div>
                     <i class="fas fa-map me-2 text-success"></i>Browse by Region
                 </div>
-                {% comment %} <a href="#" class="btn btn-sm btn-outline-secondary">
-                    View All <i class="fas fa-chevron-down ms-1"></i>
-                </a> {% endcomment %}
             </div>
             <div class="card-body">
                 <div class="row g-2">
@@ -272,11 +313,97 @@
         -webkit-text-fill-color: transparent;
     }
     
-    /* Search Card */
-    .search-card .card {
-        background: rgba(30, 35, 42, 0.8);
+    /* Enhanced Search Card */
+    .search-main-card {
+        background: rgba(var(--card-bg-rgb), 0.95);
         backdrop-filter: blur(10px);
         border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .input-group-search {
+        position: relative;
+    }
+    
+    .input-group-search .input-group-text {
+        background: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        border-right: none;
+        color: var(--accent);
+        padding: 0.75rem 1rem;
+    }
+    
+    .input-group-search .form-select {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        padding: 0.75rem;
+        height: auto;
+        cursor: pointer;
+    }
+    
+    .input-group-search .form-select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 0.2rem rgba(212, 160, 23, 0.25);
+    }
+    
+    .search-submit-btn {
+        background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .search-submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(212, 160, 23, 0.4);
+    }
+    
+    /* Mobile-specific styles */
+    @media (max-width: 768px) {
+        .hero-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .search-main-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Hide desktop layout on mobile */
+        .search-card .row.g-3:not(.mobile-search-layout) {
+            display: none;
+        }
+        
+        /* Show mobile layout */
+        .mobile-search-layout {
+            display: block !important;
+        }
+        
+        .search-submit-btn {
+            padding: 1rem;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .input-group-search {
+            margin-bottom: 1rem;
+        }
+        
+        .input-group-search .input-group-text,
+        .input-group-search .form-select {
+            padding: 1rem;
+        }
+    }
+    
+    /* Desktop-specific styles */
+    @media (min-width: 769px) {
+        .mobile-search-layout {
+            display: none !important;
+        }
     }
     
     /* Stats Overview */
@@ -334,7 +461,6 @@
         background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
         opacity: 0;
         transition: opacity 0.3s ease;
-        
     }
     
     .top-school-item:hover::before {
@@ -518,13 +644,6 @@
         color: var(--accent);
     }
     
-    /* Input group enhancements */
-    .input-group-text {
-        background: var(--secondary-bg) !important;
-        border-color: var(--border-color) !important;
-        color: var(--muted-text) !important;
-    }
-    
     /* Animation delays */
     .animate-in { animation-delay: 0.1s; }
     .delay-1 { animation-delay: 0.2s; }
@@ -538,10 +657,12 @@
     // Update form action when selections change
     document.getElementById('exam_type').addEventListener('change', updateFormAction);
     document.getElementById('year').addEventListener('change', updateFormAction);
+    document.getElementById('exam_type_mobile').addEventListener('change', updateFormAction);
+    document.getElementById('year_mobile').addEventListener('change', updateFormAction);
     
     function updateFormAction() {
-        const examType = document.getElementById('exam_type').value;
-        const year = document.getElementById('year').value;
+        const examType = document.getElementById('exam_type').value || document.getElementById('exam_type_mobile').value;
+        const year = document.getElementById('year').value || document.getElementById('year_mobile').value;
         const form = document.getElementById('rankingForm');
         form.action = `/rankings/${examType}/${year}/`;
     }
@@ -573,6 +694,25 @@
                 this.style.transform = 'translateX(0)';
             });
         });
+        
+        // Sync mobile and desktop selects
+        function syncSelects(mainId, mobileId) {
+            const mainSelect = document.getElementById(mainId);
+            const mobileSelect = document.getElementById(mobileId);
+            
+            if (mainSelect && mobileSelect) {
+                mainSelect.addEventListener('change', function() {
+                    mobileSelect.value = this.value;
+                });
+                
+                mobileSelect.addEventListener('change', function() {
+                    mainSelect.value = this.value;
+                });
+            }
+        }
+        
+        syncSelects('exam_type', 'exam_type_mobile');
+        syncSelects('year', 'year_mobile');
     });
 </script>
 {% endblock %}

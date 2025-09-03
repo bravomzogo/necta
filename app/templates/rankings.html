@@ -144,6 +144,7 @@
         color: #f0c674;
     }
 
+    /* Mobile-specific styles for export buttons */
     @media (max-width: 768px) {
         .ranking-table {
             font-size: 0.8rem;
@@ -155,6 +156,33 @@
         
         .stat-number {
             font-size: 1.5rem;
+        }
+        
+        .export-buttons {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        
+        .export-buttons > div {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .export-buttons .btn {
+            width: 100%;
+            margin: 0.25rem 0;
+        }
+        
+        .filter-card .row {
+            flex-direction: column;
+        }
+        
+        .filter-card .col-md-4,
+        .filter-card .col-md-5,
+        .filter-card .col-md-3 {
+            width: 100%;
+            margin-bottom: 1rem;
         }
     }
 </style>
@@ -227,20 +255,20 @@
     </div>
 </div>
 
-<!-- Export Buttons -->
-<div class="export-buttons d-flex justify-content-between align-items-center">
-    <div>
+<!-- Export Buttons - Updated for mobile responsiveness -->
+<div class="export-buttons d-flex flex-wrap justify-content-between align-items-center">
+    <div class="mb-2 mb-md-0">
         <span class="text-muted">
             <i class="fas fa-info-circle me-1"></i>
             Showing <strong id="visibleCount">{{ results|length }}</strong> of {{ results|length }} schools
         </span>
     </div>
-    <div>
-        <button class="btn btn-outline-success me-2" onclick="exportTableToCSV('rankings.csv')">
-            <i class="fas fa-download me-1"></i>Export CSV
+    <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-success" onclick="exportTableToCSV('rankings.csv')">
+            <i class="fas fa-download me-1"></i><span class="d-none d-md-inline">Export</span> CSV
         </button>
         <button class="btn btn-outline-primary" onclick="window.print()">
-            <i class="fas fa-print me-1"></i>Print
+            <i class="fas fa-print me-1"></i><span class="d-none d-md-inline">Print</span>
         </button>
     </div>
 </div>
@@ -315,16 +343,25 @@
         const visibleCount = document.getElementById('visibleCount');
         
         function filterTable() {
-            const regionValue = regionFilter.value.toLowerCase();
-            const searchValue = searchInput.value.toLowerCase();
+            const regionValue = regionFilter.value.trim();
+            const searchValue = searchInput.value.toLowerCase().trim();
             let visibleRows = 0;
             
+            console.log('Filter by region:', regionValue); // Debug line
+            
             rows.forEach(row => {
-                const schoolName = row.cells[2].textContent.toLowerCase();
-                const schoolCode = row.cells[1].textContent.toLowerCase();
-                const region = row.cells[3].textContent.toLowerCase();
+                const schoolName = row.cells[2].textContent.toLowerCase().trim();
+                const schoolCode = row.cells[1].textContent.toLowerCase().trim();
                 
-                const matchesRegion = regionValue === '' || region.includes(regionValue);
+                // Get region text from the badge element
+                const regionBadge = row.cells[3].querySelector('.badge');
+                const region = regionBadge ? regionBadge.textContent.trim() : '';
+                
+                console.log('Row region:', region); // Debug line - remove after testing
+                
+                // Check matches - case insensitive for region
+                const matchesRegion = regionValue === '' || 
+                                    region.toLowerCase() === regionValue.toLowerCase();
                 const matchesSearch = searchValue === '' || 
                                     schoolName.includes(searchValue) || 
                                     schoolCode.includes(searchValue);

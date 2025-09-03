@@ -362,31 +362,106 @@
             }
         }
 
-        body.dark-mode {
-            --primary-bg: #1a2a44;
-            --secondary-bg: #2e3b5e;
-            --card-bg: #2a3555;
-            --text-color: #f9f5e8;
-            --muted-text: #a8b0c9;
-            --border-color: #4a5a74;
-            --accent: #d4a017;
-            --accent-hover: #e6b800;
-            --gradient-start: #d4a017;
-            --gradient-end: #8b6f47;
-        }
+        /* Dark mode styles */
+body.dark-mode {
+    --primary-bg: #1a2a44;
+    --secondary-bg: #2e3b5e;
+    --card-bg: #2a3555;
+    --text-color: #f9f5e8;
+    --muted-text: #a8b0c9;
+    --border-color: #4a5a74;
+}
 
-        body.dark-mode ::-webkit-scrollbar-track {
-            background: var(--primary-bg);
-        }
+/* Theme toggle styles */
+.theme-toggle-container {
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+    position: relative;
+}
 
-        body.dark-mode ::-webkit-scrollbar-thumb {
-            background: var(--gradient-end);
-        }
+.theme-toggle-label {
+    font-size: 0.85rem;
+    color: var(--muted-text);
+    margin-right: 8px;
+    font-weight: 500;
+    transition: opacity 0.3s ease;
+}
 
-        body.dark-mode ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-hover);
-        }
+.theme-toggle {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
 
+.theme-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--muted-text);
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.theme-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .theme-toggle-slider {
+    background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+}
+
+input:checked + .theme-toggle-slider:before {
+    transform: translateX(30px);
+}
+
+.theme-toggle-icons {
+    position: absolute;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.theme-toggle-icons i {
+    color: white;
+    font-size: 0.8rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .theme-toggle-container {
+        margin-left: 0;
+        margin-top: 10px;
+        justify-content: flex-end;
+        width: 100%;
+    }
+    
+    .theme-toggle-label {
+        display: none;
+    }
+}
         #chatbot-container {
             position: fixed;
             bottom: 90px;
@@ -886,41 +961,50 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">
-                <i class="fas fa-graduation-cap"></i>
-                <span>NECTA Rankings</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'home' %}">
-                            <i class="fas fa-home me-1"></i>Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#aboutModal">
-                            <i class="fas fa-info-circle me-1"></i>About
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#contactModal">
-                            <i class="fas fa-envelope me-1"></i>Contact
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <button class="theme-toggle" id="themeToggle">
-                            <i class="fas fa-sun"></i>
-                        </button>
-                    </li>
-                </ul>
-            </div>
+   <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-graduation-cap"></i>
+            <span>NECTA Rankings</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">
+                        <i class="fas fa-home me-1"></i>Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                        <i class="fas fa-info-circle me-1"></i>About
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#contactModal">
+                        <i class="fas fa-envelope me-1"></i>Contact
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <div class="theme-toggle-container">
+                        <span class="theme-toggle-label" style="margin-left:10px"></span>
+                        <label class="theme-toggle">
+                            <input type="checkbox" id="themeToggle">
+                            <span class="theme-toggle-slider"></span>
+                            <div class="theme-toggle-icons">
+                                <i class="fas fa-sun"></i>
+                                <i class="fas fa-moon"></i>
+                            </div>
+                        </label>
+                        <span class="theme-toggle-label"></span>
+                    </div>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <div class="container py-4">
         {% block content %}
@@ -1196,42 +1280,43 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Theme toggle functionality
-        const themeToggle = document.getElementById('themeToggle');
-        const icon = themeToggle.querySelector('i');
-        
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            
-            if (document.body.classList.contains('dark-mode')) {
-                document.body.style.setProperty('--primary-bg', '#1a2a44');
-                document.body.style.setProperty('--secondary-bg', '#2e3b5e');
-                document.body.style.setProperty('--card-bg', '#2a3555');
-                document.body.style.setProperty('--text-color', '#f9f5e8');
-                document.body.style.setProperty('--muted-text', '#a8b0c9');
-                document.body.style.setProperty('--border-color', '#4a5a74');
-                document.body.style.setProperty('--accent', '#d4a017');
-                document.body.style.setProperty('--accent-hover', '#e6b800');
-                document.body.style.setProperty('--gradient-start', '#d4a017');
-                document.body.style.setProperty('--gradient-end', '#8b6f47');
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-            } else {
-                document.body.style.setProperty('--primary-bg', '#f9f5e8');
-                document.body.style.setProperty('--secondary-bg', '#e8e2c9');
-                document.body.style.setProperty('--card-bg', '#ffffff');
-                document.body.style.setProperty('--text-color', '#1a2a44');
-                document.body.style.setProperty('--muted-text', '#4a5a74');
-                document.body.style.setProperty('--border-color', '#d9d2b0');
-                document.body.style.setProperty('--accent', '#d4a017');
-                document.body.style.setProperty('--accent-hover', '#e6b800');
-                document.body.style.setProperty('--gradient-start', '#d4a017');
-                document.body.style.setProperty('--gradient-end', '#8b6f47');
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-            }
-        });
-
+        // Theme toggle functionality with localStorage persistence
+document.addEventListener('DOMContentLoaded', function() {
+    const themeToggle = document.getElementById('themeToggle');
+    const themeLabel = document.querySelectorAll('.theme-toggle-label');
+    
+    // Check for saved theme preference or respect OS preference
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    // Set initial theme
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.body.classList.add('dark-mode');
+        themeToggle.checked = true;
+        themeLabel[0].style.opacity = '0.6';
+        themeLabel[1].style.opacity = '1';
+    } else {
+        document.body.classList.remove('dark-mode');
+        themeToggle.checked = false;
+        themeLabel[0].style.opacity = '1';
+        themeLabel[1].style.opacity = '0.6';
+    }
+    
+    // Listen for toggle changes
+    themeToggle.addEventListener('change', function() {
+        if (this.checked) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('theme', 'dark');
+            themeLabel[0].style.opacity = '0.6';
+            themeLabel[1].style.opacity = '1';
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('theme', 'light');
+            themeLabel[0].style.opacity = '1';
+            themeLabel[1].style.opacity = '0.6';
+        }
+    });
+});
         // Animation on scroll
         document.addEventListener('DOMContentLoaded', function() {
             const animatedElements = document.querySelectorAll('.animate-in');

@@ -117,10 +117,15 @@
         text-decoration: underline;
     }
 
-    /* Export Buttons */
+    /* Export Buttons - Mobile Responsive */
+    .export-buttons {
+        margin-bottom: 1.5rem;
+    }
+    
     .export-buttons .btn {
         border-radius: 8px;
         transition: all 0.3s ease;
+        margin-bottom: 0.5rem;
     }
     
     .export-buttons .btn:hover {
@@ -152,6 +157,7 @@
         background-color: rgba(35, 134, 54, 0.4);
     }
 
+    /* Mobile Responsive Styles */
     @media (max-width: 768px) {
         .ranking-table {
             font-size: 0.8rem;
@@ -159,6 +165,7 @@
         
         .stats-grid {
             gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         }
         
         .stat-number {
@@ -167,6 +174,78 @@
         
         .region-header {
             padding: 1.5rem;
+        }
+        
+        .region-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .region-header .lead {
+            font-size: 1rem;
+        }
+        
+        /* Mobile Export Buttons */
+        .export-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .export-buttons .btn {
+            width: 100%;
+            margin-bottom: 0;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .export-buttons .btn .d-md-none {
+            display: inline !important;
+        }
+        
+        /* Mobile card header search */
+        .card-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch !important;
+        }
+        
+        .card-header .input-group {
+            max-width: 100% !important;
+        }
+        
+        /* Mobile table adjustments */
+        .table-responsive {
+            font-size: 0.8rem;
+        }
+        
+        .ranking-table th,
+        .ranking-table td {
+            padding: 0.5rem 0.25rem;
+        }
+        
+        /* Hide some columns on very small screens */
+        @media (max-width: 576px) {
+            .ranking-table .d-none-xs {
+                display: none !important;
+            }
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .region-header {
+            padding: 1rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
         }
     }
 </style>
@@ -204,14 +283,6 @@
                 <div class="stat-number">{{ results|length|intcomma }}</div>
                 <div class="stat-label">Schools in Region</div>
             </div>
-            {% comment %} <div class="stat-card">
-                <div class="stat-number">{{ total_students|intcomma }}</div>
-                <div class="stat-label">Total Students</div>
-            </div> {% endcomment %}
-            {% comment %} <div class="stat-card">
-                <div class="stat-number">{% if results %}{{ avg_gpa|floatformat:2 }}{% else %}0.00{% endif %}</div>
-                <div class="stat-label">Average GPA</div>
-            </div> {% endcomment %}
             <div class="stat-card">
                 <div class="stat-number">{% if results %}{{ results.0.gpa|floatformat:4 }}{% else %}0.0000{% endif %}</div>
                 <div class="stat-label">Best GPA</div>
@@ -220,16 +291,19 @@
     {% endwith %}
 </div>
 
-<!-- Export Buttons -->
-<div class="export-buttons mb-3">
-    <button class="btn btn-outline-success me-2" onclick="exportTableToCSV('{{ region|slugify }}-rankings.csv')">
-        <i class="fas fa-download me-1"></i>Export CSV
+<!-- Export Buttons - Mobile Responsive -->
+<div class="export-buttons">
+    <button class="btn btn-outline-success" onclick="exportTableToCSV('{{ region|slugify }}-rankings.csv')">
+        <i class="fas fa-download me-2"></i>
+        <span class="d-none d-md-inline">Export </span>CSV
     </button>
-    <button class="btn btn-outline-primary me-2" onclick="window.print()">
-        <i class="fas fa-print me-1"></i>Print
+    <button class="btn btn-outline-primary" onclick="window.print()">
+        <i class="fas fa-print me-2"></i>
+        <span class="d-none d-md-inline">Print </span>Rankings
     </button>
     <a href="{% url 'school_rankings' exam_type year %}" class="btn btn-outline-secondary">
-        <i class="fas fa-globe me-1"></i>View All Regions
+        <i class="fas fa-globe me-2"></i>
+        <span class="d-none d-md-inline">View </span>All Regions
     </a>
 </div>
 
@@ -253,11 +327,11 @@
                         <th>Code</th>
                         <th>School</th>
                         <th>GPA</th>
-                        <th class="text-center">Div I</th>
-                        <th class="text-center">Div II</th>
-                        <th class="text-center">Div III</th>
-                        <th class="text-center">Div IV</th>
-                        <th class="text-center">Div 0</th>
+                        <th class="text-center d-none-xs">Div I</th>
+                        <th class="text-center d-none-xs">Div II</th>
+                        <th class="text-center d-none-xs">Div III</th>
+                        <th class="text-center d-none-xs">Div IV</th>
+                        <th class="text-center d-none-xs">Div 0</th>
                         <th class="text-center">Total</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -277,11 +351,11 @@
                             </a>
                         </td>
                         <td class="gpa-cell">{{ result.gpa|floatformat:4 }}</td>
-                        <td class="division-cell">{{ result.division1 }}</td>
-                        <td class="division-cell">{{ result.division2 }}</td>
-                        <td class="division-cell">{{ result.division3 }}</td>
-                        <td class="division-cell">{{ result.division4 }}</td>
-                        <td class="division-cell text-danger">{{ result.division0 }}</td>
+                        <td class="division-cell d-none-xs">{{ result.division1 }}</td>
+                        <td class="division-cell d-none-xs">{{ result.division2 }}</td>
+                        <td class="division-cell d-none-xs">{{ result.division3 }}</td>
+                        <td class="division-cell d-none-xs">{{ result.division4 }}</td>
+                        <td class="division-cell text-danger d-none-xs">{{ result.division0 }}</td>
                         <td class="division-cell fw-bold">{{ result.total }}</td>
                         <td class="text-center">
                             <a href="{% url 'school_detail' result.school.id %}" class="btn btn-sm btn-outline-primary" title="View Details">

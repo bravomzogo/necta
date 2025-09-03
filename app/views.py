@@ -34,6 +34,12 @@ def school_rankings(request, exam_type, year):
         '4_plus': results.filter(gpa__gte=4.0).count(),
     }
     
+    # Get unique regions from the current results
+    regions = list(results.values_list('school__region', flat=True).distinct()
+                  .exclude(school__region='Unknown')
+                  .exclude(school__region__isnull=True)
+                  .order_by('school__region'))
+    
     # Add ranking position to each result
     ranked_results = []
     for rank, result in enumerate(results, start=1):
@@ -51,11 +57,12 @@ def school_rankings(request, exam_type, year):
     
     context = {
         'results': ranked_results,
+        'regions': regions,  # Added this line
         'exam_type': exam_type,
         'year': year,
         'total_schools': total_schools,
         'total_students': total_students,
-        'avg_gpa_all': round( avg_gpa_all, 2),
+        'avg_gpa_all': round(avg_gpa_all, 2),
         'best_gpa': round(best_gpa, 4) if best_gpa else 0,
         'division1_total': division_totals['div1'] or 0,
         'division2_total': division_totals['div2'] or 0,
