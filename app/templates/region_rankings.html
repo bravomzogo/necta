@@ -253,13 +253,13 @@
 
 {% block content %}
 <!-- Breadcrumb -->
-<nav aria-label="breadcrumb" class="breadcrumb">
+{% comment %} <nav aria-label="breadcrumb" class="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
         <li class="breadcrumb-item"><a href="{% url 'school_rankings' exam_type year %}">{{ exam_type }} {{ year }} Rankings</a></li>
         <li class="breadcrumb-item active" aria-current="page">{{ region }}</li>
     </ol>
-</nav>
+</nav> {% endcomment %}
 
 <!-- Region Header -->
 <div class="region-header">
