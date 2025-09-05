@@ -1,6 +1,7 @@
+import json
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Sum, Avg, Count, Q
-from .models import ExamResult, School
+from .models import ExamResult, School, StudentResult
 from .services import get_ranked_schools
 
 def school_rankings(request, exam_type, year):
@@ -112,9 +113,87 @@ def school_detail(request, school_id):
     school = get_object_or_404(School, id=school_id)
     results = ExamResult.objects.filter(school=school).order_by('-year', 'exam')
     
+    # Get student results for the latest result
+    student_results = []
+    latest_year = None
+    latest_exam = None
+    subject_data_for_js = {}  # Add this to store subject data for JavaScript
+    
+    if results.exists():
+        latest_result = results.first()
+        latest_year = latest_result.year
+        latest_exam = latest_result.exam
+        
+        student_results = StudentResult.objects.filter(
+            exam_result=latest_result
+        ).order_by('candidate_number')
+        
+        # Parse subjects for each student and prepare data for JavaScript
+        subject_data = {}
+        
+        for student in student_results:
+            # Parse the subject string into a list of (subject, grade) tuples
+            student.subjects_list = []
+            
+            # Handle different possible formats in the subject string
+            subject_string = student.subjects
+            
+            # Try different splitting patterns
+            if '   ' in subject_string:  # Triple spaces
+                subject_pairs = subject_string.split('   ')
+            elif '  ' in subject_string:  # Double spaces
+                subject_pairs = subject_string.split('  ')
+            else:  # Single spaces (try a more sophisticated approach)
+                # This regex pattern looks for patterns like "SUBJ - 'GRADE'"
+                import re
+                subject_pairs = re.findall(r'([A-Za-z\s]+)\s+-\s+\'([A-FS0-9])\'', subject_string)
+                # If regex found matches, process them
+                if subject_pairs:
+                    student.subjects_list = [(subject.strip(), grade) for subject, grade in subject_pairs]
+                    # Also add to subject_data for JavaScript
+                    for subject, grade in student.subjects_list:
+                        if subject not in subject_data:
+                            subject_data[subject] = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'S': 0, 'F': 0, 'total': 0}
+                        if grade in subject_data[subject]:
+                            subject_data[subject][grade] += 1
+                            subject_data[subject]['total'] += 1
+                    continue
+            
+            for pair in subject_pairs:
+                if pair.strip():
+                    parts = pair.split(' - ')
+                    if len(parts) == 2:
+                        subject = parts[0].strip()
+                        grade = parts[1].strip().replace("'", "").replace('"', '')
+                        student.subjects_list.append((subject, grade))
+                        # Add to subject_data for JavaScript
+                        if subject not in subject_data:
+                            subject_data[subject] = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'S': 0, 'F': 0, 'total': 0}
+                        if grade in subject_data[subject]:
+                            subject_data[subject][grade] += 1
+                            subject_data[subject]['total'] += 1
+                    elif len(parts) > 2:
+                        # Handle cases where there might be extra dashes in subject names
+                        subject = ' - '.join(parts[:-1]).strip()
+                        grade = parts[-1].strip().replace("'", "").replace('"', '')
+                        student.subjects_list.append((subject, grade))
+                        # Add to subject_data for JavaScript
+                        if subject not in subject_data:
+                            subject_data[subject] = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'S': 0, 'F': 0, 'total': 0}
+                        if grade in subject_data[subject]:
+                            subject_data[subject][grade] += 1
+                            subject_data[subject]['total'] += 1
+        
+        # Convert subject_data to a format that can be passed to JavaScript
+        subject_data_for_js = subject_data
+    
     context = {
         'school': school,
         'results': results,
+        'student_results': student_results,
+        'latest_year': latest_year,
+        'latest_exam': latest_exam,
+        'subject_data_json': json.dumps(subject_data_for_js),  # Add this line
     }
     return render(request, "school_detail.html", context)
 

@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% load humanize %}
-
+{% load custom_filters %}
 {% block title %}{{ school.name }} - Details - NECTA Results{% endblock %}
 
 {% block extra_css %}
 <style>
+    
     /* School Header */
     .school-header {
         background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
@@ -271,6 +272,128 @@
             font-size: 1.2rem;
         }
     }
+    /* Subject grades styling */
+.subject-grades {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.subject-grades .badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
+}
+
+/* Pink color for female badge */
+.bg-pink {
+    background-color: #e84393 !important;
+}
+
+/* Chart responsiveness */
+@media (max-width: 768px) {
+    .subject-grades .badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.4rem;
+    }
+}
+/* Mobile-friendly student results */
+@media (max-width: 768px) {
+    .student-results-card .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .student-results-card table {
+        min-width: 600px; /* Ensure table doesn't get too narrow */
+    }
+    
+    .subject-grades {
+        max-width: 300px;
+    }
+    
+    .subject-grades .badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+        margin-bottom: 0.2rem;
+    }
+}
+
+/* Mobile-specific styles for very small screens */
+@media (max-width: 480px) {
+    .student-results-card {
+        margin-left: -15px;
+        margin-right: -15px;
+        border-radius: 0;
+    }
+    
+    .subject-grades {
+        max-width: 250px;
+    }
+    
+    .subject-grades .badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.3rem;
+    }
+}
+
+/* Full screen modal improvements */
+.fullscreen-modal .fullscreen-chart-container {
+    width: 95%;
+    height: 85%;
+    padding: 1rem;
+}
+
+.fullscreen-modal .fullscreen-title {
+    font-size: 1.2rem;
+}
+
+/* Ensure charts are visible in full screen */
+.fullscreen-chart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+
+/* Student details modal styling */
+.subject-grades-detailed {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.subject-grades-detailed .subject-name {
+    font-weight: 500;
+}
+
+.grade-badge {
+    font-size: 1.1rem;
+    min-width: 30px;
+    text-align: center;
+}
+
+/* Full screen modal improvements */
+.fullscreen-modal {
+    z-index: 99999; /* Ensure it's above everything */
+}
+
+.fullscreen-modal .fullscreen-chart-container {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+}
+
+/* Mobile modal improvements */
+@media (max-width: 768px) {
+    .subject-grades-detailed {
+        max-height: 200px;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .modal-content {
+        border-radius: 12px;
+    }
+}
 </style>
 {% endblock %}
 
@@ -410,6 +533,196 @@
         </div>
         <div class="fullscreen-chart">
             <canvas id="fullscreenChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Student Results Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm student-results-card">
+            <div class="card-header bg-gradient text-white fw-bold d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-user-graduate me-2"></i> Student Results 
+                    {% if latest_year and latest_exam %}
+                    ({{ latest_year }} {{ latest_exam }})
+                    {% endif %}
+                </span>
+                <span class="badge bg-light text-dark">
+                    {{ student_results|length }} students
+                </span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover results-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Candidate #</th>
+                                <th>Sex</th>
+                                <th>Aggregate</th>
+                                <th>Division</th>
+                                <th>Subjects & Grades</th>
+                                {% comment %} <th class="text-center">Actions</th> {% endcomment %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in student_results %}
+                            <tr>
+                                <td><strong>{{ student.candidate_number }}</strong></td>
+                                <td>
+                                    <span class="badge {% if student.sex == 'M' %}bg-primary{% else %}bg-pink{% endif %}">
+                                        {{ student.sex }}
+                                    </span>
+                                </td>
+                                <td class="fw-bold text-info">{{ student.aggregate_score }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if student.division == 'I' %}bg-success
+                                        {% elif student.division == 'II' %}bg-primary
+                                        {% elif student.division == 'III' %}bg-warning
+                                        {% elif student.division == 'IV' %}bg-secondary
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ student.division }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="subject-grades">
+                                        {% for subject, grade in student.subjects_list %}
+                                            <span class="badge bg-dark text-light me-1 mb-1" 
+                                                  data-bs-toggle="tooltip" title="{{ subject }}: {{ grade }}">
+                                                {{ subject|slice:":8" }}{% if subject|length > 8 %}...{% endif %}:
+                                                <span class="fw-bold 
+                                                    {% if grade == 'A' %}text-success
+                                                    {% elif grade == 'B' %}text-primary
+                                                    {% elif grade == 'C' %}text-info
+                                                    {% elif grade == 'D' %}text-warning
+                                                    {% elif grade == 'E' or grade == 'S' %}text-secondary
+                                                    {% else %}text-danger{% endif %}">
+                                                    {{ grade }}
+                                                </span>
+                                            </span>
+                                        {% empty %}
+                                            <span class="text-muted small">No data</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                {% comment %} <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-info view-details-btn" 
+                                            data-student="{{ student.candidate_number }}"
+                                            data-sex="{{ student.sex }}"
+                                            data-aggregate="{{ student.aggregate_score }}"
+                                            data-division="{{ student.division }}"
+                                            data-subjects='{{ student.subjects_list|json_script }}'>
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td> {% endcomment %}
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">
+                                    No student results available for this school
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Subject Analysis Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-gradient text-white fw-bold">
+                <i class="fas fa-chart-bar me-2"></i> Subject Performance Analysis
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <div class="chart-title">Subject Grade Distribution</div>
+                            <div class="chart-controls">
+                                <button class="chart-btn fullscreen-btn" data-chart="subjectGradeChart" data-title="Subject Grade Distribution">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                            <canvas id="subjectGradeChart" height="300"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <div class="chart-title">Top Performing Subjects</div>
+                            <div class="chart-controls">
+                                <button class="chart-btn fullscreen-btn" data-chart="subjectPerformanceChart" data-title="Top Performing Subjects">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                            <canvas id="subjectPerformanceChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Details Modal -->
+<div class="modal fade" id="studentDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient text-white">
+                <h5 class="modal-title">Student Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Candidate Number:</strong> <span id="modal-candidate-number"></span></p>
+                        <p><strong>Sex:</strong> <span id="modal-sex" class="badge bg-primary"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Aggregate Score:</strong> <span id="modal-aggregate" class="fw-bold text-info"></span></p>
+                        <p><strong>Division:</strong> <span id="modal-division" class="badge bg-success"></span></p>
+                    </div>
+                </div>
+                <hr>
+                <h6 class="mb-3">Subjects & Grades:</h6>
+                <div class="subject-grades-detailed" id="modal-subjects"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full Screen Modals for Subject Charts -->
+<div class="fullscreen-modal" id="fullscreenSubjectGradeModal">
+    <div class="fullscreen-chart-container">
+        <div class="fullscreen-header">
+            <h3 class="fullscreen-title">Subject Grade Distribution</h3>
+            <button class="close-fullscreen" data-modal="fullscreenSubjectGradeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="fullscreen-chart">
+            <canvas id="fullscreenSubjectGradeChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="fullscreen-modal" id="fullscreenSubjectPerformanceModal">
+    <div class="fullscreen-chart-container">
+        <div class="fullscreen-header">
+            <h3 class="fullscreen-title">Top Performing Subjects</h3>
+            <button class="close-fullscreen" data-modal="fullscreenSubjectPerformanceModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="fullscreen-chart">
+            <canvas id="fullscreenSubjectPerformanceChart"></canvas>
         </div>
     </div>
 </div>
@@ -957,5 +1270,376 @@
             document.getElementById(`${graphType}-section`).style.display = 'block';
         });
     });
+
+
+
+// Use pre-processed subject data from Django
+const subjectData = {{ subject_data_json|safe }};
+
+// Calculate average grade for each subject
+function calculateSubjectAverages(subjectData) {
+    const averages = {};
+    
+    for (const [subject, grades] of Object.entries(subjectData)) {
+        let totalScore = 0;
+        let totalStudents = 0;
+        
+        // Convert grades to numerical values (A=1, B=2, C=3, D=4, E=5, S=6, F=7)
+        const gradeValues = {
+            'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'S': 6, 'F': 7
+        };
+        
+        for (const [grade, count] of Object.entries(grades)) {
+            if (grade !== 'total' && gradeValues[grade]) {
+                totalScore += gradeValues[grade] * count;
+                totalStudents += count;
+            }
+        }
+        
+        averages[subject] = totalStudents > 0 ? (totalScore / totalStudents) : 0;
+    }
+    
+    return averages;
+}
+
+// Initialize subject analysis charts
+function initSubjectCharts() {
+    const subjectAverages = calculateSubjectAverages(subjectData);
+    
+    // Prepare data for charts
+    const subjects = Object.keys(subjectData);
+    
+    // Subject Grade Distribution Chart (Stacked Bar)
+    const subjectGradeCtx = document.getElementById('subjectGradeChart').getContext('2d');
+    const subjectGradeChart = new Chart(subjectGradeCtx, {
+        type: 'bar',
+        data: {
+            labels: subjects.map(sub => sub.length > 15 ? sub.substring(0, 15) + '...' : sub),
+            datasets: [
+                {
+                    label: 'A',
+                    data: subjects.map(subject => subjectData[subject].A || 0),
+                    backgroundColor: '#00b894',
+                    stack: 'Stack 0'
+                },
+                {
+                    label: 'B',
+                    data: subjects.map(subject => subjectData[subject].B || 0),
+                    backgroundColor: '#0984e3',
+                    stack: 'Stack 0'
+                },
+                {
+                    label: 'C',
+                    data: subjects.map(subject => subjectData[subject].C || 0),
+                    backgroundColor: '#fdcb6e',
+                    stack: 'Stack 0'
+                },
+                {
+                    label: 'D',
+                    data: subjects.map(subject => subjectData[subject].D || 0),
+                    backgroundColor: '#e17055',
+                    stack: 'Stack 0'
+                },
+                {
+                    label: 'E/S',
+                    data: subjects.map(subject => (subjectData[subject].E || 0) + (subjectData[subject].S || 0)),
+                    backgroundColor: '#6c5ce7',
+                    stack: 'Stack 0'
+                },
+                {
+                    label: 'F',
+                    data: subjects.map(subject => subjectData[subject].F || 0),
+                    backgroundColor: '#d63031',
+                    stack: 'Stack 0'
+                }
+            ]
+        },
+        options: {
+            plugins: {
+                legend: { 
+                    labels: { color: 'var(--muted-text)' },
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: 'Grade Distribution by Subject',
+                    color: 'var(--accent)'
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    ticks: { color: 'var(--muted-text)' }
+                },
+                y: {
+                    stacked: true,
+                    ticks: { color: 'var(--muted-text)' },
+                    title: {
+                        display: true,
+                        text: 'Number of Students',
+                        color: 'var(--muted-text)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Subject Performance Chart (Horizontal Bar - sorted by performance)
+    const sortedSubjects = Object.entries(subjectAverages)
+        .sort(([,a], [,b]) => a - b)
+        .slice(0, 10); // Top 10 subjects
+    
+    const subjectPerformanceCtx = document.getElementById('subjectPerformanceChart').getContext('2d');
+    const subjectPerformanceChart = new Chart(subjectPerformanceCtx, {
+        type: 'bar',
+        data: {
+            labels: sortedSubjects.map(([subject]) => 
+                subject.length > 20 ? subject.substring(0, 20) + '...' : subject),
+            datasets: [{
+                label: 'Average Grade Score (Lower is Better)',
+                data: sortedSubjects.map(([,avg]) => avg),
+                backgroundColor: sortedSubjects.map(([,avg]) => {
+                    if (avg <= 2.0) return '#00b894'; // Excellent
+                    if (avg <= 3.0) return '#74b9ff'; // Good
+                    if (avg <= 4.0) return '#fdcb6e'; // Average
+                    if (avg <= 5.0) return '#e17055'; // Below Average
+                    return '#d63031'; // Poor
+                }),
+                borderColor: 'rgba(0,0,0,0.1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: { 
+                    labels: { color: 'var(--muted-text)' },
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Subject Performance (Lower Score = Better)',
+                    color: 'var(--accent)'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const score = context.raw;
+                            let performance = '';
+                            if (score <= 2.0) performance = ' (Excellent)';
+                            else if (score <= 3.0) performance = ' (Good)';
+                            else if (score <= 4.0) performance = ' (Average)';
+                            else if (score <= 5.0) performance = ' (Below Average)';
+                            else performance = ' (Poor)';
+                            return `Average: ${score.toFixed(2)}${performance}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: 'var(--muted-text)' },
+                    title: {
+                        display: true,
+                        text: 'Average Grade Score',
+                        color: 'var(--muted-text)'
+                    }
+                },
+                y: {
+                    ticks: { color: 'var(--muted-text)' }
+                }
+            }
+        }
+    });
+    
+    // Add these charts to the fullscreen functionality
+    window.subjectGradeChart = subjectGradeChart;
+    window.subjectPerformanceChart = subjectPerformanceChart;
+}
+
+// Initialize subject charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Only initialize subject charts if we have subject data
+    if (Object.keys(subjectData).length > 0) {
+        initSubjectCharts();
+    } else {
+        // Display message if no subject data
+        document.getElementById('subjectGradeChart').getContext('2d').fillText(
+            "No subject data available", 
+            document.getElementById('subjectGradeChart').width / 2, 
+            document.getElementById('subjectGradeChart').height / 2
+        );
+        document.getElementById('subjectPerformanceChart').getContext('2d').fillText(
+            "No subject data available", 
+            document.getElementById('subjectPerformanceChart').width / 2, 
+            document.getElementById('subjectPerformanceChart').height / 2
+        );
+    }
+    
+    // Add tooltips for subject badges
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+
+// Student details modal functionality
+document.querySelectorAll('.view-details-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const candidateNumber = this.getAttribute('data-student');
+        const sex = this.getAttribute('data-sex');
+        const aggregate = this.getAttribute('data-aggregate');
+        const division = this.getAttribute('data-division');
+        const subjectsJson = this.getAttribute('data-subjects');
+        const subjects = JSON.parse(subjectsJson);
+        
+        // Populate modal
+        document.getElementById('modal-candidate-number').textContent = candidateNumber;
+        document.getElementById('modal-sex').textContent = sex;
+        document.getElementById('modal-aggregate').textContent = aggregate;
+        document.getElementById('modal-division').textContent = division;
+        
+        // Set division badge color
+        const divisionBadge = document.getElementById('modal-division');
+        divisionBadge.className = 'badge ' + (
+            division === 'I' ? 'bg-success' :
+            division === 'II' ? 'bg-primary' :
+            division === 'III' ? 'bg-warning' :
+            division === 'IV' ? 'bg-secondary' : 'bg-danger'
+        );
+        
+        // Populate subjects
+        const subjectsContainer = document.getElementById('modal-subjects');
+        subjectsContainer.innerHTML = '';
+        
+        subjects.forEach(([subject, grade]) => {
+            const gradeClass = 
+                grade === 'A' ? 'text-success' :
+                grade === 'B' ? 'text-primary' :
+                grade === 'C' ? 'text-info' :
+                grade === 'D' ? 'text-warning' :
+                (grade === 'E' || grade === 'S') ? 'text-secondary' : 'text-danger';
+                
+            const subjectElement = document.createElement('div');
+            subjectElement.className = 'd-flex justify-content-between align-items-center py-2 border-bottom';
+            subjectElement.innerHTML = `
+                <span class="subject-name">${subject}</span>
+                <span class="grade-badge fw-bold ${gradeClass}">${grade}</span>
+            `;
+            subjectsContainer.appendChild(subjectElement);
+        });
+        
+        // Show modal
+        new bootstrap.Modal(document.getElementById('studentDetailsModal')).show();
+    });
+});
+
+// Full screen functionality for subject charts
+function openSubjectChartFullscreen(chartId, modalId, title) {
+    const chart = window[chartId];
+    if (!chart) return;
+    
+    const modal = document.getElementById(modalId);
+    const canvas = modal.querySelector('canvas');
+    const titleElement = modal.querySelector('.fullscreen-title');
+    
+    titleElement.textContent = title;
+    modal.classList.add('active');
+    
+    // Destroy existing chart if any
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+    
+    // Create new chart in fullscreen
+    const fullscreenChart = new Chart(canvas, {
+        type: chart.config.type,
+        data: JSON.parse(JSON.stringify(chart.config.data)),
+        options: JSON.parse(JSON.stringify(chart.config.options))
+    });
+    
+    // Adjust options for fullscreen
+    fullscreenChart.options.maintainAspectRatio = false;
+    fullscreenChart.options.plugins.title = {
+        display: true,
+        text: title,
+        font: { size: 18 },
+        color: 'var(--accent)'
+    };
+    fullscreenChart.update();
+    
+    // Store reference for later cleanup
+    modal.dataset.chartInstance = fullscreenChart;
+}
+
+// Close fullscreen modals
+document.querySelectorAll('.close-fullscreen[data-modal]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const modalId = this.getAttribute('data-modal');
+        const modal = document.getElementById(modalId);
+        
+        // Destroy chart instance
+        if (modal.dataset.chartInstance) {
+            const chart = Chart.getChart(modal.querySelector('canvas'));
+            if (chart) {
+                chart.destroy();
+            }
+            delete modal.dataset.chartInstance;
+        }
+        
+        modal.classList.remove('active');
+    });
+});
+
+// Add fullscreen buttons to subject charts
+document.querySelectorAll('.fullscreen-btn[data-chart="subjectGradeChart"]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        openSubjectChartFullscreen('subjectGradeChart', 'fullscreenSubjectGradeModal', 'Subject Grade Distribution');
+    });
+});
+
+document.querySelectorAll('.fullscreen-btn[data-chart="subjectPerformanceChart"]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        openSubjectChartFullscreen('subjectPerformanceChart', 'fullscreenSubjectPerformanceModal', 'Top Performing Subjects');
+    });
+});
+
+// Close modals when clicking outside or pressing Escape
+document.querySelectorAll('.fullscreen-modal').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('active');
+            // Destroy chart instance
+            if (this.dataset.chartInstance) {
+                const chart = Chart.getChart(this.querySelector('canvas'));
+                if (chart) {
+                    chart.destroy();
+                }
+                delete this.dataset.chartInstance;
+            }
+        }
+    });
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.fullscreen-modal').forEach(modal => {
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                // Destroy chart instance
+                if (modal.dataset.chartInstance) {
+                    const chart = Chart.getChart(modal.querySelector('canvas'));
+                    if (chart) {
+                        chart.destroy();
+                    }
+                    delete modal.dataset.chartInstance;
+                }
+            }
+        });
+    }
+});
+
 </script>
 {% endblock %}

@@ -1,4 +1,3 @@
-# models.py
 from django.db import models
 
 class School(models.Model):
@@ -30,3 +29,21 @@ class ExamResult(models.Model):
 
     def __str__(self):
         return f"{self.school.name} ({self.exam} {self.year}) - GPA: {self.gpa:.2f}"
+
+
+
+
+
+class StudentResult(models.Model):
+    exam_result = models.ForeignKey(ExamResult, on_delete=models.CASCADE, related_name="student_results")
+    candidate_number = models.CharField(max_length=20)
+    sex = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female')])
+    aggregate_score = models.CharField(max_length=10)
+    division = models.CharField(max_length=5)
+    subjects = models.TextField()  # Store as JSON string or comma-separated values
+
+    class Meta:
+        unique_together = ("exam_result", "candidate_number")
+        
+    def __str__(self):
+        return f"{self.candidate_number} - {self.exam_result}"

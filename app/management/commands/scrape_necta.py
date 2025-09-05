@@ -1,9 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand, CommandError
-from app.models import School, ExamResult
+from app.models import School, ExamResult, StudentResult
 import re
 import os
+from urllib.parse import urljoin
 
 BASE_URL = "https://onlinesys.necta.go.tz/results/{year}/{exam}/"
 
@@ -97,8 +98,9 @@ class Command(BaseCommand):
                     headers = [cell.get_text(strip=True) for cell in rows[0].find_all('td')]
                     for row in rows[1:]:
                         values = [cell.get_text(strip=True) for cell in row.find_all('td')]
-                        subject = dict(zip(headers, values))
-                        subjects.append(subject)
+                        if len(values) == len(headers):
+                            subject = dict(zip(headers, values))
+                            subjects.append(subject)
                 break
         return subjects
 
@@ -106,7 +108,7 @@ class Command(BaseCommand):
         students = []
         tables = soup.find_all('table')
         for table in tables:
-            if 'CNO' in table.get_text() and 'SEX' in table.get_text() and 'AGGT' in table.get_text() and 'DIV' in table.get_text() and 'DETAILED SUBJECTS' in table.get_text():
+            if 'CNO' in table.get_text() and 'SEX' in table.get_text() and 'AGGT' in table.get_text() and 'DIV' in table.get_text():
                 rows = table.find_all('tr')
                 for row in rows[1:]:  # Skip header
                     cells = row.find_all('td')
@@ -197,7 +199,7 @@ class Command(BaseCommand):
             if href.startswith(('http://', 'https://')):
                 school_url = href
             else:
-                school_url = f"{BASE_URL.format(year=year, exam=exam)}{href}"
+                school_url = urljoin(BASE_URL.format(year=year, exam=exam), href)
             
             school_text = link.text.strip()
 
@@ -252,7 +254,7 @@ class Command(BaseCommand):
                 school.region = region
                 school.save()
 
-            ExamResult.objects.update_or_create(
+            exam_result, created = ExamResult.objects.update_or_create(
                 school=school,
                 exam=exam.upper(),
                 year=year,
@@ -266,6 +268,20 @@ class Command(BaseCommand):
                     "gpa": gpa,
                 },
             )
+
+          
+            # Save student results
+            for student_data in students:
+                StudentResult.objects.update_or_create(
+                    exam_result=exam_result,
+                    candidate_number=student_data['CNO'],
+                    defaults={
+                        "sex": student_data['SEX'],
+                        "aggregate_score": student_data['AGGT'],
+                        "division": student_data['DIV'],
+                        "subjects": student_data['DETAILED SUBJECTS'],
+                    }
+                )
 
             # Store result for ranking later
             all_results.append({
@@ -299,8 +315,6 @@ class Command(BaseCommand):
                 f.write(f"{rank}. {result['code']} {result['name']} - {result['region']} - GPA: {result['gpa']}\n")
 
         self.stdout.write(self.style.SUCCESS(f"✅ Results saved to school_results_{year}_{exam}.txt"))
-
-
 # import requests
 # from bs4 import BeautifulSoup
 # from django.core.management.base import BaseCommand, CommandError
