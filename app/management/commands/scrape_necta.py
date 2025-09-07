@@ -137,7 +137,7 @@ class Command(BaseCommand):
             "Dar es Salaam", "Arusha", "Dodoma", "Mwanza", "Mbeya", "Tanga", "Morogoro",
             "Kagera", "Mtwara", "Kilimanjaro", "Tabora", "Singida", "Rukwa", "Kigoma",
             "Shinyanga", "Mara", "Manyara", "Ruvuma", "Lindi", "Pwani", "Geita", "Katavi",
-            "Njombe", "Simiyu", "Songwe", "Iringa"
+            "Njombe", "Simiyu", "Songwe", "Iringa", "Mjini Magharibi", "Kaskazini Pemba"
         ]
         
         # Look for region patterns in the text
