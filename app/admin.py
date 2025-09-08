@@ -1,6 +1,6 @@
 # app/admin.py
 from django.contrib import admin
-from .models import School, ExamResult,  StudentResult
+from .models import School, ExamResult, SubjectPerformance, StudentResult
 
 
 @admin.register(School)
@@ -24,22 +24,37 @@ class ExamResultAdmin(admin.ModelAdmin):
         "total",
         "gpa",
     )
+    search_fields = ("school__code", "school__name", "exam", "year")
     list_filter = ("exam", "year")
-    search_fields = ("school__name", "school__code")
-    ordering = ("-year", "exam", "gpa")
+    ordering = ("-year", "exam")
 
 
-
+@admin.register(SubjectPerformance)
+class SubjectPerformanceAdmin(admin.ModelAdmin):
+    list_display = (
+        "exam_result",
+        "subject_code",
+        "subject_name",
+        "registered",
+        "sat",
+        "passed",
+        "gpa",
+        "competency_level",
+    )
+    search_fields = ("subject_code", "subject_name", "exam_result__school__name")
+    list_filter = ("exam_result__exam", "exam_result__year", "subject_name")
+    ordering = ("subject_code",)
 
 
 @admin.register(StudentResult)
 class StudentResultAdmin(admin.ModelAdmin):
     list_display = (
+        "exam_result",
         "candidate_number",
         "sex",
-        "division",
         "aggregate_score",
-        "exam_result",
+        "division",
     )
-    list_filter = ("sex", "division", "exam_result__exam", "exam_result__year")
-    search_fields = ("candidate_number", "subjects")
+    search_fields = ("candidate_number", "division", "exam_result__school__name")
+    list_filter = ("division", "sex", "exam_result__exam", "exam_result__year")
+    ordering = ("candidate_number",)
