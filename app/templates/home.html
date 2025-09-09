@@ -4,6 +4,284 @@
 
 {% block content %}
 <!-- Hero Section -->
+
+
+<div class="loader-overlay">
+    <div class="gold-loader">
+        <div class="loader-header">
+            <div class="loader-logo">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3>NECTA Results Analysis</h3>
+        </div>
+        
+        <div class="chart-container">
+            <div class="gold-bars">
+                <div class="bar" style="--height: 40%; --delay: 0s;"></div>
+                <div class="bar" style="--height: 70%; --delay: 0.1s;"></div>
+                <div class="bar" style="--height: 90%; --delay: 0.2s;"></div>
+                <div class="bar" style="--height: 60%; --delay: 0.3s;"></div>
+                <div class="bar" style="--height: 85%; --delay: 0.4s;"></div>
+                <div class="bar" style="--height: 75%; --delay: 0.5s;"></div>
+            </div>
+            
+            <div class="gold-pie">
+                <div class="pie-slice" style="--start: 0deg; --end: 120deg;"></div>
+                <div class="pie-slice" style="--start: 120deg; --end: 210deg;"></div>
+                <div class="pie-slice" style="--start: 210deg; --end: 360deg;"></div>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-text">Processing school performance data</div>
+            <div class="gold-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="percentage">0%</div>
+        </div>
+        
+        <div class="loader-footer">
+            <div class="stat">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Schools Analyzed</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Regions Processed</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.gold-loader {
+    width: 400px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 215, 0, 0.1);
+    text-align: center;
+}
+
+.loader-header {
+    margin-bottom: 25px;
+}
+
+.loader-logo {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 15px;
+    background: linear-gradient(135deg, #FFD700 0%, #D4AF37 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #1a1a1a;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+.loader-header h3 {
+    color: #FFD700;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.chart-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 25px 0;
+    padding: 0 10px;
+}
+
+.gold-bars {
+    display: flex;
+    align-items: flex-end;
+    height: 120px;
+    gap: 12px;
+}
+
+.bar {
+    width: 16px;
+    background: linear-gradient(to top, #D4AF37, #FFD700, #FFDF40);
+    border-radius: 4px 4px 0 0;
+    height: var(--height);
+    animation: bar-grow 1.8s ease-in-out infinite;
+    animation-delay: var(--delay);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 20%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.8), transparent);
+}
+
+@keyframes bar-grow {
+    0%, 100% { 
+        transform: scaleY(1);
+        opacity: 0.7;
+    }
+    50% { 
+        transform: scaleY(1.05);
+        opacity: 1;
+    }
+}
+
+.gold-pie {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: conic-gradient(
+        rgba(212, 175, 55, 0.2) 0deg 120deg,
+        rgba(255, 215, 0, 0.4) 120deg 210deg,
+        rgba(255, 223, 64, 0.6) 210deg 360deg
+    );
+    position: relative;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+    animation: rotate 8s linear infinite;
+}
+
+.pie-slice {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%);
+    background: conic-gradient(
+        #D4AF37 var(--start),
+        #FFD700 var(--end)
+    );
+    transform: rotate(var(--start));
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.progress-container {
+    margin: 25px 0;
+}
+
+.progress-text {
+    color: #FFDF40;
+    font-size: 14px;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.gold-progress {
+    height: 8px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 30%;
+    background: linear-gradient(to right, #D4AF37, #FFD700);
+    border-radius: 4px;
+    animation: progress-move 2s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+@keyframes progress-move {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+}
+
+.percentage {
+    color: #FFD700;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.loader-footer {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    color: #FFD700;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #FFDF40;
+    font-size: 12px;
+    opacity: 0.8;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const percentageElement = document.querySelector('.percentage');
+    const schoolStat = document.querySelector('.stat:nth-child(1) .stat-value');
+    const regionStat = document.querySelector('.stat:nth-child(2) .stat-value');
+    
+    let progress = 0;
+    let schools = 0;
+    let regions = 0;
+    
+    const progressInterval = setInterval(() => {
+        progress += 1;
+        percentageElement.textContent = `${progress}%`;
+        
+        if (progress % 3 === 0 && schools < 2487) {
+            schools += 37;
+            schoolStat.textContent = schools.toLocaleString();
+        }
+        
+        if (progress % 7 === 0 && regions < 26) {
+            regions += 1;
+            regionStat.textContent = regions;
+        }
+        
+        if (progress >= 100) {
+            clearInterval(progressInterval);
+            // Hide loader when content is ready
+             document.querySelector('.loader-overlay').style.display = 'none';
+        }
+    }, 50);
+});
+</script>
 <div class="row justify-content-center mb-5 animate-in">
     <div class="col-lg-10">
         <div class="card hero-card">
@@ -279,6 +557,8 @@
         </div>
     </div>
 </div>
+
+
 {% endblock %}
 
 {% block extra_css %}
