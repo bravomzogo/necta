@@ -26,7 +26,6 @@ def cut(value, arg):
 
 
 # app/templatetags/custom_filters.py
-from django import template
 
 register = template.Library()
 
@@ -45,3 +44,15 @@ def multiply(value, arg):
         return float(value) * float(arg)
     except ValueError:
         return 0
+
+
+register = template.Library()
+
+@register.filter
+def is_numeric(value):
+    """Check if a value is numeric"""
+    try:
+        float(value)
+        return True
+    except (ValueError, TypeError):
+        return False
