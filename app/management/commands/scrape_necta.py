@@ -5,8 +5,15 @@ from app.models import School, ExamResult, StudentResult, SubjectPerformance
 import re
 import os
 from urllib.parse import urljoin
+import ssl
+import urllib3
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-BASE_URL = "https://onlinesys.necta.go.tz/results/{year}/{exam}/"
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+BASE_URL = "https://matokeo.necta.go.tz/results/{year}/{exam}/"
 
 class Command(BaseCommand):
     help = "Scrape NECTA results for CSEE or ACSEE and rank schools"
@@ -14,6 +21,27 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--exam", type=str, required=True, help="Exam type: CSEE or ACSEE")
         parser.add_argument("--year", type=int, required=True, help="Exam year (e.g. 2023)")
+        parser.add_argument("--ignore-ssl", action="store_true", help="Ignore SSL certificate verification")
+
+    def _create_session(self, ignore_ssl=False):
+        """Create a requests session with retry logic"""
+        session = requests.Session()
+        
+        # Configure retry strategy
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        # Disable SSL verification if requested
+        if ignore_ssl:
+            session.verify = False
+        
+        return session
 
     def _parse_int(self, value):
         try:
@@ -304,18 +332,29 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         exam = options["exam"].lower()
         year = options["year"]
+        ignore_ssl = options["ignore_ssl"]
 
         if exam not in ["csee", "acsee"]:
             raise CommandError("Only CSEE and ACSEE are supported.")
+
+        # Create session with SSL handling
+        session = self._create_session(ignore_ssl)
 
         index_url = f"{BASE_URL.format(year=year, exam=exam)}/index.htm"
         self.stdout.write(f"Fetching index: {index_url}")
 
         try:
-            resp = requests.get(index_url, timeout=30)
+            resp = session.get(index_url, timeout=30)
             resp.raise_for_status()
         except Exception as e:
-            raise CommandError(f"Failed to fetch {index_url}: {e}")
+            # Try alternative URL format
+            index_url_alt = f"https://matokeo.necta.go.tz/results/{year}/{exam}/index.htm"
+            self.stdout.write(f"Trying alternative URL: {index_url_alt}")
+            try:
+                resp = session.get(index_url_alt, timeout=30)
+                resp.raise_for_status()
+            except Exception as e2:
+                raise CommandError(f"Failed to fetch both URLs: {e}\nAlternative URL also failed: {e2}")
 
         soup = BeautifulSoup(resp.text, "html.parser")
         
@@ -359,7 +398,7 @@ class Command(BaseCommand):
                 continue
 
             try:
-                sresp = requests.get(school_url, timeout=30)
+                sresp = session.get(school_url, timeout=30)
                 sresp.raise_for_status()
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f"⚠️ Failed to fetch {school_url}: {e}"))
