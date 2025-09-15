@@ -42,6 +42,11 @@
             border-bottom: 1px solid var(--border-color);
             padding: 0.75rem 1rem;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: fixed; 
+            z-index: 1030; /* High z-index to stay on top */
+            width: 100%;
+
+            
         }
 
         .navbar-brand {
@@ -50,6 +55,9 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            
+
+
         }
 
         .navbar-brand span {
@@ -1008,7 +1016,7 @@ input:checked + .theme-toggle-slider:before {
         </div>
     </div>
 </nav>
-
+<br><br><br><br>
     <div class="container py-4">
         {% block content %}
         <div class="row mb-4 animate-in">
