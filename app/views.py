@@ -125,35 +125,51 @@ def school_detail(request, school_id):
     # Get school details
     school = get_object_or_404(School, id=school_id)
     
-    # Get year and exam_type from query parameters, default to latest if not provided
-    year = request.GET.get('year')
+    # Get year and exam_type from query parameters
+    year_str = request.GET.get('year')
     exam_type = request.GET.get('exam_type', 'ACSEE').upper()  # Default to ACSEE if not provided
     
-    # Initialize variables
+    # Get all results for the school (for history table)
     results = ExamResult.objects.filter(school=school).order_by('-year', 'exam')
+    
+    # Initialize variables
     student_results = []
     subject_data_for_js = {}
     subject_performances = []
     school_ranking = None
     total_schools_in_exam = 0
     selected_result = None
+    latest_year = None
+    latest_exam = None
+    selected_year = None
 
-    # Filter results for the specific year and exam_type if provided
-    if year and exam_type:
+    # Parse year
+    if year_str:
         try:
-            year = int(year)
-            selected_result = results.filter(year=year, exam=exam_type).first()
+            selected_year = int(year_str)
         except ValueError:
-            # Handle invalid year format
-            selected_result = results.first()
-    else:
-        selected_result = results.first()
+            selected_year = None  # Invalid year
+
+    # Filter for selected_result
+    if selected_year and exam_type:
+        if exam_type.lower() == 'all':
+            # For 'all', get first result for the year (any exam)
+            selected_result = results.filter(year=selected_year).first()
+        else:
+            # Filter by specific exam
+            selected_result = results.filter(year=selected_year, exam=exam_type).first()
+    
+    # Fallback if no selected_result
+    if not selected_result and results.exists():
+        selected_result = results.first()  # Latest available
 
     if selected_result:
         latest_year = selected_result.year
         latest_exam = selected_result.exam
 
-        # Get school's ranking position for the selected exam
+        print(f"DEBUG: Selected result - Year: {latest_year}, Exam: {latest_exam}, School: {school.name}")  # Debug
+
+        # Get school's ranking position for the selected exam/year
         ranked_schools = ExamResult.objects.filter(
             exam=latest_exam,
             year=latest_year,
@@ -161,138 +177,137 @@ def school_detail(request, school_id):
         ).select_related('school').order_by('gpa', '-total')
         
         total_schools_in_exam = ranked_schools.count()
+        print(f"DEBUG: Total schools in exam: {total_schools_in_exam}")  # Debug
         
-        # Convert to list to get ranking position
+        # Find ranking
         ranked_list = list(ranked_schools)
         for rank, result in enumerate(ranked_list, start=1):
             if result.school.id == school.id:
                 school_ranking = rank
                 break
         
-        # Get student results for the selected exam result
-        student_results = StudentResult.objects.filter(
-            exam_result=selected_result
-        ).order_by('candidate_number')
+        # Get student results
+        student_results = StudentResult.objects.filter(exam_result=selected_result).order_by('candidate_number')
+        print(f"DEBUG: Student results count: {student_results.count()}")  # Debug
         
-        # Get subject performance data for the selected exam result
-        subject_performances = SubjectPerformance.objects.filter(
-            exam_result=selected_result
-        ).order_by('gpa')
+        # Get subject performances for this school
+        subject_performances = list(SubjectPerformance.objects.filter(exam_result=selected_result).order_by('gpa'))
+        print(f"DEBUG: School subject performances count: {len(subject_performances)}")  # Debug
         
-        # Get subject rankings compared to all other schools
-        all_subject_performances = SubjectPerformance.objects.filter(
-            exam_result__exam=latest_exam,
-            exam_result__year=latest_year,
-            gpa__isnull=False
-        ).select_related('exam_result__school')
-        
-        # Group by subject code and create rankings
-        subject_rankings = {}
-        for subject_perf in all_subject_performances:
-            subject_code = subject_perf.subject_code
-            if subject_code not in subject_rankings:
-                subject_rankings[subject_code] = []
-            subject_rankings[subject_code].append({
-                'school_id': subject_perf.exam_result.school.id,
-                'school_name': subject_perf.exam_result.school.name,
-                'gpa': subject_perf.gpa,
-                'subject_name': subject_perf.subject_name,
-                'passed': subject_perf.passed,
-                'registered': subject_perf.registered
-            })
-        
-        # Sort each subject's performances by GPA (lower is better in NECTA)
-        for subject_code, performances in subject_rankings.items():
-            performances.sort(key=lambda x: x['gpa'])
-        
-        # Enhance subject performances with ranking data
-        enhanced_subject_performances = []
-        for subject in subject_performances:
-            subject_code = subject.subject_code
-            if subject_code in subject_rankings:
-                ranked_performances = subject_rankings[subject_code]
-                
-                # Find this school's rank
-                school_rank = None
-                for rank, perf in enumerate(ranked_performances, 1):
-                    if perf['school_id'] == school.id:
-                        school_rank = rank
-                        break
-                
-                if school_rank is not None:
-                    total_schools_offering = len(ranked_performances)
+        if subject_performances:
+            # Get all subject performances for national comparison
+            all_subject_performances = list(SubjectPerformance.objects.filter(
+                exam_result__exam=latest_exam,
+                exam_result__year=latest_year,
+                gpa__isnull=False
+            ).select_related('exam_result__school'))
+            print(f"DEBUG: All subject performances count: {len(all_subject_performances)}")  # Debug
+            
+            # Group by subject code
+            subject_rankings = {}
+            for subject_perf in all_subject_performances:
+                subject_code = subject_perf.subject_code
+                if subject_code not in subject_rankings:
+                    subject_rankings[subject_code] = []
+                subject_rankings[subject_code].append({
+                    'school_id': subject_perf.exam_result.school.id,
+                    'school_name': subject_perf.exam_result.school.name,
+                    'gpa': subject_perf.gpa,
+                    'subject_name': subject_perf.subject_name,
+                    'passed': getattr(subject_perf, 'passed', 0),  # Assume field exists
+                    'registered': getattr(subject_perf, 'registered', 0)  # Assume field exists
+                })
+            
+            # Sort each subject by GPA (lower better)
+            for subject_code, performances in subject_rankings.items():
+                performances.sort(key=lambda x: x['gpa'])
+            
+            # Enhance school's subjects with rankings
+            enhanced_subject_performances = []
+            for subject in subject_performances:
+                subject_code = subject.subject_code
+                if subject_code in subject_rankings:
+                    ranked_performances = subject_rankings[subject_code]
                     
-                    # Handle special case where only one school offers the subject
-                    if total_schools_offering == 1:
-                        percentile = 100.0
-                        performance_label = "Only School"
-                    else:
-                        percentile = ((total_schools_offering - school_rank) / total_schools_offering * 100) if total_schools_offering > 0 else 0
+                    # Find school's rank
+                    school_rank = None
+                    for rank, perf in enumerate(ranked_performances, 1):
+                        if perf['school_id'] == school.id:
+                            school_rank = rank
+                            break
+                    
+                    if school_rank is not None:
+                        total_schools_offering = len(ranked_performances)
                         
-                        if school_rank == 1:
-                            performance_label = "🥇 Top"
-                        elif school_rank == 2:
-                            performance_label = "🥈 2nd"
-                        elif school_rank == 3:
-                            performance_label = "🥉 3rd"
-                        elif school_rank <= 10:
-                            performance_label = "Top 10"
-                        elif school_rank <= 50:
-                            performance_label = "Top 50"
-                        elif school_rank <= 100:
-                            performance_label = "Top 100"
+                        if total_schools_offering == 1:
+                            percentile = 100.0
+                            performance_label = "Only School"
                         else:
-                            performance_label = f"Rank {school_rank}"
-                    
-                    enhanced_subject_performances.append({
-                        'subject': subject,
-                        'subject_rank': school_rank,
-                        'total_schools_offering': total_schools_offering,
-                        'percentile': percentile,
-                        'performance_label': performance_label,
-                        'top_performer_gpa': ranked_performances[0]['gpa'] if ranked_performances else None,
-                        'national_avg_gpa': sum(p['gpa'] for p in ranked_performances) / total_schools_offering if total_schools_offering > 0 else 0
-                    })
-        
-        subject_performances = enhanced_subject_performances.sort(key=lambda x: x['subject_rank'])
-        
-        # Parse subjects for each student and prepare data for JavaScript
+                            percentile = max(0, ((total_schools_offering - school_rank) / (total_schools_offering - 1)) * 100)  # Adjusted percentile (exclude self for better calc)
+                            
+                            if school_rank == 1:
+                                performance_label = "🥇 Top"
+                            elif school_rank == 2:
+                                performance_label = "🥈 2nd"
+                            elif school_rank == 3:
+                                performance_label = "🥉 3rd"
+                            elif school_rank <= 10:
+                                performance_label = "Top 10"
+                            elif school_rank <= 50:
+                                performance_label = "Top 50"
+                            elif school_rank <= 100:
+                                performance_label = "Top 100"
+                            else:
+                                performance_label = f"Rank {school_rank}"
+                        
+                        enhanced_subject_performances.append({
+                            'subject': subject,
+                            'subject_rank': school_rank,
+                            'total_schools_offering': total_schools_offering,
+                            'percentile': round(percentile, 1),
+                            'performance_label': performance_label,
+                            'top_performer_gpa': ranked_performances[0]['gpa'] if ranked_performances else subject.gpa,
+                            'national_avg_gpa': round(sum(p['gpa'] for p in ranked_performances) / total_schools_offering, 2) if total_schools_offering > 0 else subject.gpa
+                        })
+                        print(f"DEBUG: Enhanced {subject.subject_code} - Rank: {school_rank}, Schools: {total_schools_offering}")  # Debug
+            
+            # Fix: Sort without mutating to None
+            subject_performances = sorted(enhanced_subject_performances, key=lambda x: x['subject_rank'])
+            print(f"DEBUG: Final subject_performances count: {len(subject_performances)}")  # Debug
+
+        # Parse subjects for JS charts (unchanged)
         subject_data = {}
         for student in student_results:
-            student.subjects_list = []
-            subject_string = student.subjects
+            student.subjects_list = []  # Ensure this is set
+            subject_string = getattr(student, 'subjects', '')
             
+            # Parsing logic (unchanged, but added safety)
+            if not subject_string:
+                continue
+                
             if '   ' in subject_string:
-                subject_pairs = subject_string.split('   ')
+                subject_pairs = [p.strip() for p in subject_string.split('   ') if p.strip()]
             elif '  ' in subject_string:
-                subject_pairs = subject_string.split('  ')
+                subject_pairs = [p.strip() for p in subject_string.split('  ') if p.strip()]
             else:
-                subject_pairs = re.findall(r'([A-Za-z\s]+)\s+-\s+\'([A-FS0-9])\'', subject_string)
+                import re
+                subject_pairs = re.findall(r'([A-Za-z\s]+?)\s*-\s*\'?([A-FS])\'?', subject_string)
                 if subject_pairs:
                     student.subjects_list = [(subject.strip(), grade) for subject, grade in subject_pairs]
-                    for subject, grade in student.subjects_list:
-                        if subject not in subject_data:
-                            subject_data[subject] = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'S': 0, 'F': 0, 'total': 0}
-                        if grade in subject_data[subject]:
-                            subject_data[subject][grade] += 1
-                            subject_data[subject]['total'] += 1
+                    for subj_name, grade in student.subjects_list:
+                        if subj_name not in subject_data:
+                            subject_data[subj_name] = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'S': 0, 'F': 0, 'total': 0}
+                        if grade in subject_data[subj_name]:
+                            subject_data[subj_name][grade] += 1
+                            subject_data[subj_name]['total'] += 1
                     continue
             
             for pair in subject_pairs:
-                if pair.strip():
-                    parts = pair.split(' - ')
-                    if len(parts) == 2:
-                        subject = parts[0].strip()
-                        grade = parts[1].strip().replace("'", "").replace('"', '')
-                        student.subjects_list.append((subject, grade))
-                        if subject not in subject_data:
-                            subject_data[subject] = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'S': 0, 'F': 0, 'total': 0}
-                        if grade in subject_data[subject]:
-                            subject_data[subject][grade] += 1
-                            subject_data[subject]['total'] += 1
-                    elif len(parts) > 2:
-                        subject = ' - '.join(parts[:-1]).strip()
-                        grade = parts[-1].strip().replace("'", "").replace('"', '')
+                parts = pair.split(' - ')
+                if len(parts) >= 2:
+                    subject = ' - '.join(parts[:-1]).strip()
+                    grade = parts[-1].strip().replace("'", "").replace('"', '').upper()[:1]
+                    if grade in 'ABCDEF S':
                         student.subjects_list.append((subject, grade))
                         if subject not in subject_data:
                             subject_data[subject] = {'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0, 'S': 0, 'F': 0, 'total': 0}
@@ -301,13 +316,17 @@ def school_detail(request, school_id):
                             subject_data[subject]['total'] += 1
         
         subject_data_for_js = subject_data
+        print(f"DEBUG: Subject data keys: {list(subject_data.keys())}")  # Debug
 
+    # Context (add selected vars)
     context = {
         'school': school,
         'results': results,
         'student_results': student_results,
         'latest_year': latest_year,
         'latest_exam': latest_exam,
+        'selected_year': selected_year,
+        'selected_exam_type': exam_type,
         'subject_data_json': json.dumps(subject_data_for_js),
         'subject_performances': subject_performances,
         'school_ranking': school_ranking,

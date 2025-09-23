@@ -462,11 +462,11 @@
 </div>
 
 <!-- Exam Type Tabs -->
-<div class="exam-tabs">
+{% comment %} <div class="exam-tabs">
     <div class="exam-tab {% if latest_exam == 'all' %}active{% endif %}" data-exam="all" data-year="{{ latest_year }}">All Results</div>
     <div class="exam-tab {% if latest_exam == 'CSEE' %}active{% endif %}" data-exam="CSEE" data-year="{{ latest_year }}">CSEE Results</div>
     <div class="exam-tab {% if latest_exam == 'ACSEE' %}active{% endif %}" data-exam="ACSEE" data-year="{{ latest_year }}">ACSEE Results</div>
-</div>
+</div> {% endcomment %}
 <!-- Graph Type Tabs -->
 <div class="graph-tabs">
     <div class="graph-tab active" data-graph="gpa">GPA Trends</div>
@@ -660,11 +660,19 @@
 <div class="row mt-4">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-gradient text-white fw-bold">
-                <i class="fas fa-trophy me-2"></i> Subject Performance Ranking vs All Schools
-                {% if latest_year and latest_exam %}
-                ({{ latest_year }} {{ latest_exam }})
-                {% endif %}
+            <div class="card-header bg-gradient text-white fw-bold d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-trophy me-2"></i> Subject Performance Ranking vs All Schools
+                    {% if selected_year and selected_exam_type %}
+                    ({{ selected_year }} {{ selected_exam_type }})
+                    {% elif latest_year and latest_exam %}
+                    ({{ latest_year }} {{ latest_exam }})
+                    {% endif %}
+                </span>
+                {% comment %} Debug: Remove in production {% endcomment %}
+                <span class="badge bg-info text-dark small">
+                    Found: {{ subject_performances|length }} subjects
+                </span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -684,24 +692,24 @@
                         <tbody>
                             {% for subject_data in subject_performances %}
                             {% with subject=subject_data.subject %}
-                                {# Skip subjects where this school is the only one offering it OR subject name is a number #}
-                                {% if subject_data.total_schools_offering > 1 and not subject.subject_name|is_numeric %}
+                                {# Skip only if subject name is numeric; show even if total_schools_offering == 1 #}
+                                {% if not subject.subject_name|is_numeric %}
                                 <tr>
                                     <td class="subject-rank {% if subject_data.subject_rank <= 3 %}rank-{{ subject_data.subject_rank}}{% endif %}">
-                                        {{ subject_data.subject_rank }}
+                                        {{ subject_data.subject_rank|default:"N/A" }}
                                     </td>
                                     <td>
-                                        <strong>{{ subject.subject_code }}</strong><br>
-                                        <small>{{ subject.subject_name }}</small>
+                                        <strong>{{ subject.subject_code|default:"N/A" }}</strong><br>
+                                        <small>{{ subject.subject_name|default:"N/A" }}</small>
                                     </td>
                                     <td class="text-center fw-bold {% if subject_data.subject_rank <= 10 %}text-success{% elif subject_data.subject_rank <= 50 %}text-primary{% else %}text-warning{% endif %}">
-                                        {{ subject.gpa|floatformat:2 }}
+                                        {{ subject.gpa|floatformat:2|default:"N/A" }}
                                     </td>
                                     <td class="text-center">
-                                        {{ subject_data.national_avg_gpa|floatformat:2 }}
+                                        {{ subject_data.national_avg_gpa|floatformat:2|default:"N/A" }}
                                     </td>
                                     <td class="text-center">
-                                        {{ subject_data.top_performer_gpa|floatformat:2 }}
+                                        {{ subject_data.top_performer_gpa|floatformat:2|default:"N/A" }}
                                     </td>
                                     <td class="text-center">
                                         <span class="badge 
@@ -709,14 +717,15 @@
                                             {% elif subject_data.subject_rank <= 50 %}bg-primary
                                             {% elif subject_data.subject_rank <= 100 %}bg-warning
                                             {% else %}bg-secondary{% endif %}">
-                                            {{ subject_data.performance_label }}
+                                            {{ subject_data.performance_label|default:"N/A" }}
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        {{ subject_data.total_schools_offering }}
+                                        {{ subject_data.total_schools_offering|default:1 }}
+                                        {% if subject_data.total_schools_offering == 1 %}<small class="text-muted d-block">Only this school</small>{% endif %}
                                     </td>
                                     <td class="text-center fw-bold {% if subject_data.percentile >= 90 %}text-success{% elif subject_data.percentile >= 75 %}text-primary{% else %}text-info{% endif %}">
-                                        {{ subject_data.percentile|floatformat:1 }}%
+                                        {{ subject_data.percentile|floatformat:1|default:"N/A" }}%
                                     </td>
                                 </tr>
                                 {% endif %}
@@ -724,7 +733,16 @@
                             {% empty %}
                             <tr>
                                 <td colspan="8" class="text-center text-muted py-3">
-                                    No subject performance data available for {{ latest_exam }} {{ latest_year }}
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    No subject performance data available for 
+                                    {% if selected_year and selected_exam_type %}
+                                    {{ selected_exam_type }} {{ selected_year }}
+                                    {% elif latest_year and latest_exam %}
+                                    {{ latest_exam }} {{ latest_year }}
+                                    {% else %}
+                                    selected year/exam
+                                    {% endif %}
+                                    <br><small class="mt-1 d-block">Check if data exists for this school and year.</small>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -740,11 +758,9 @@
                         <span class="badge bg-primary me-2">Top 50</span>
                         <span class="badge bg-warning me-2">Top 100</span>
                         <span class="badge bg-secondary me-2">Other</span>
-                        | Lower GPA = Better Performance
-                        <span class="float-end">
-                            <i class="fas fa-info-circle text-primary"></i> 
-                            Subjects offered by only one school or with invalid names are not displayed
-                        </span>
+                        | Lower GPA = Better Performance <br> <i class="fas fa-info-circle text-primary"></i> 
+                            Subjects offered by only one school are shown with a note; numeric subject names are skipped
+                       
                     </small>
                 </div>
             </div>
