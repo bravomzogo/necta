@@ -303,10 +303,10 @@
                         </td>
                         <td><strong>{{ result.school.code }}</strong></td>
                         <td>
-                            <a href="{% url 'school_detail' result.school.id %}" class="text-decoration-none">
-                                {{ result.school.name }}
-                            </a>
-                        </td>
+    <a href="{% url 'school_detail' result.school.id %}?year={{ year }}&exam_type={{ exam_type }}" class="text-decoration-none">
+        {{ result.school.name }}
+    </a>
+</td>
                         <td>
                             <span class="badge" style="background: var(--accent); color: #000;">{{ result.school.region }}</span>
                         </td>

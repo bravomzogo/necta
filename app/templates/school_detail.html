@@ -463,11 +463,10 @@
 
 <!-- Exam Type Tabs -->
 <div class="exam-tabs">
-    <div class="exam-tab active" data-exam="all">All Results</div>
-    <div class="exam-tab" data-exam="CSEE">CSEE Results</div>
-    <div class="exam-tab" data-exam="ACSEE">ACSEE Results</div>
+    <div class="exam-tab {% if latest_exam == 'all' %}active{% endif %}" data-exam="all" data-year="{{ latest_year }}">All Results</div>
+    <div class="exam-tab {% if latest_exam == 'CSEE' %}active{% endif %}" data-exam="CSEE" data-year="{{ latest_year }}">CSEE Results</div>
+    <div class="exam-tab {% if latest_exam == 'ACSEE' %}active{% endif %}" data-exam="ACSEE" data-year="{{ latest_year }}">ACSEE Results</div>
 </div>
-
 <!-- Graph Type Tabs -->
 <div class="graph-tabs">
     <div class="graph-tab active" data-graph="gpa">GPA Trends</div>
@@ -599,7 +598,6 @@
                                 <th>Aggregate</th>
                                 <th>Division</th>
                                 <th>Subjects & Grades</th>
-                                {% comment %} <th class="text-center">Actions</th> {% endcomment %}
                             </tr>
                         </thead>
                         <tbody>
@@ -643,21 +641,11 @@
                                         {% endfor %}
                                     </div>
                                 </td>
-                                {% comment %} <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-info view-details-btn" 
-                                            data-student="{{ student.candidate_number }}"
-                                            data-sex="{{ student.sex }}"
-                                            data-aggregate="{{ student.aggregate_score }}"
-                                            data-division="{{ student.division }}"
-                                            data-subjects='{{ student.subjects_list|json_script }}'>
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </td> {% endcomment %}
                             </tr>
                             {% empty %}
                             <tr>
                                 <td colspan="6" class="text-center text-muted py-3">
-                                    No student results available for this school
+                                    No student results available for {{ latest_exam }} {{ latest_year }}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -736,7 +724,7 @@
                             {% empty %}
                             <tr>
                                 <td colspan="8" class="text-center text-muted py-3">
-                                    No subject performance data available
+                                    No subject performance data available for {{ latest_exam }} {{ latest_year }}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -911,499 +899,478 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Prepare data for charts
-    const cseeResults = [];
-    const acseeResults = [];
-    
-    {% for result in results %}
-        {% if result.exam == "CSEE" %}
-            cseeResults.push({
-                year: '{{ result.year }}',
-                gpa: {{ result.gpa }},
-                division1: {{ result.division1 }},
-                division2: {{ result.division2 }},
-                division3: {{ result.division3 }},
-                division4: {{ result.division4 }},
-                division0: {{ result.division0 }},
-                total: {{ result.total }}
-            });
-        {% elif result.exam == "ACSEE" %}
-            acseeResults.push({
-                year: '{{ result.year }}',
-                gpa: {{ result.gpa }},
-                division1: {{ result.division1 }},
-                division2: {{ result.division2 }},
-                division3: {{ result.division3 }},
-                division4: {{ result.division4 }},
-                division0: {{ result.division0 }},
-                total: {{ result.total }}
-            });
-        {% endif %}
-    {% endfor %}
-    
-    // Sort results by year
-    cseeResults.sort((a, b) => a.year - b.year);
-    acseeResults.sort((a, b) => a.year - b.year);
-    
-    // Chart instances
-    let cseeGpaChart, acseeGpaChart, cseeDivisionChart, acseeDivisionChart, 
-        performanceChart, divisionComparisonChart, fullscreenChart;
-    
-    // Initialize all charts
-    function initCharts() {
-        // CSEE GPA Chart
-        const cseeGpaCtx = document.getElementById('cseeGpaChart').getContext('2d');
-        cseeGpaChart = new Chart(cseeGpaCtx, {
-            type: 'line',
-            data: {
-                labels: cseeResults.map(result => result.year),
-                datasets: [{
-                    label: 'CSEE GPA',
-                    data: cseeResults.map(result => result.gpa),
-                    borderColor: '#74b9ff',
-                    backgroundColor: 'rgba(116,185,255,0.15)',
-                    tension: 0.3,
-                    fill: true,
-                    pointBackgroundColor: '#0984e3',
-                    pointBorderColor: '#fff',
-                    pointRadius: 5,
-                    pointHoverRadius: 7
-                }]
+// Prepare data for charts
+const cseeResults = [];
+const acseeResults = [];
+
+{% for result in results %}
+    {% if result.exam == "CSEE" %}
+        cseeResults.push({
+            year: '{{ result.year }}',
+            gpa: {{ result.gpa }},
+            division1: {{ result.division1 }},
+            division2: {{ result.division2 }},
+            division3: {{ result.division3 }},
+            division4: {{ result.division4 }},
+            division0: {{ result.division0 }},
+            total: {{ result.total }}
+        });
+    {% elif result.exam == "ACSEE" %}
+        acseeResults.push({
+            year: '{{ result.year }}',
+            gpa: {{ result.gpa }},
+            division1: {{ result.division1 }},
+            division2: {{ result.division2 }},
+            division3: {{ result.division3 }},
+            division4: {{ result.division4 }},
+            division0: {{ result.division0 }},
+            total: {{ result.total }}
+        });
+    {% endif %}
+{% endfor %}
+
+// Sort results by year
+cseeResults.sort((a, b) => a.year - b.year);
+acseeResults.sort((a, b) => a.year - b.year);
+
+// Chart instances
+let cseeGpaChart, acseeGpaChart, cseeDivisionChart, acseeDivisionChart, 
+    performanceChart, divisionComparisonChart, fullscreenChart;
+
+// Initialize all charts
+function initCharts() {
+    // CSEE GPA Chart
+    const cseeGpaCtx = document.getElementById('cseeGpaChart').getContext('2d');
+    cseeGpaChart = new Chart(cseeGpaCtx, {
+        type: 'line',
+        data: {
+            labels: cseeResults.map(result => result.year),
+            datasets: [{
+                label: 'CSEE GPA',
+                data: cseeResults.map(result => result.gpa),
+                borderColor: '#74b9ff',
+                backgroundColor: 'rgba(116,185,255,0.15)',
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: '#0984e3',
+                pointBorderColor: '#fff',
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { labels: { color: 'var(--muted-text)' } }
             },
-            options: {
-                plugins: {
-                    legend: { labels: { color: 'var(--muted-text)' } }
+            scales: {
+                y: { 
+                    reverse: true, 
+                    ticks: { color: 'var(--muted-text)' },
+                    title: {
+                        display: true,
+                        text: 'GPA',
+                        color: 'var(--muted-text)'
+                    }
                 },
-                scales: {
-                    y: { 
-                        reverse: true, 
-                        ticks: { color: 'var(--muted-text)' },
-                        title: {
-                            display: true,
-                            text: 'GPA',
-                            color: 'var(--muted-text)'
-                        }
-                    },
-                    x: { 
-                        ticks: { color: 'var(--muted-text)' },
-                        title: {
-                            display: true,
-                            text: 'Year',
-                            color: 'var(--muted-text)'
-                        }
+                x: { 
+                    ticks: { color: 'var(--muted-text)' },
+                    title: {
+                        display: true,
+                        text: 'Year',
+                        color: 'var(--muted-text)'
                     }
                 }
             }
-        });
-
-        // ACSEE GPA Chart
-        const acseeGpaCtx = document.getElementById('acseeGpaChart').getContext('2d');
-        acseeGpaChart = new Chart(acseeGpaCtx, {
-            type: 'line',
-            data: {
-                labels: acseeResults.map(result => result.year),
-                datasets: [{
-                    label: 'ACSEE GPA',
-                    data: acseeResults.map(result => result.gpa),
-                    borderColor: '#00cec9',
-                    backgroundColor: 'rgba(0,206,201,0.15)',
-                    tension: 0.3,
-                    fill: true,
-                    pointBackgroundColor: '#00b894',
-                    pointBorderColor: '#fff',
-                    pointRadius: 5,
-                    pointHoverRadius: 7
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: { labels: { color: 'var(--muted-text)' } }
-                },
-                scales: {
-                    y: { 
-                        reverse: true, 
-                        ticks: { color: 'var(--muted-text)' },
-                        title: {
-                            display: true,
-                            text: 'GPA',
-                            color: 'var(--muted-text)'
-                        }
-                    },
-                    x: { 
-                        ticks: { color: 'var(--muted-text)' },
-                        title: {
-                            display: true,
-                            text: 'Year',
-                            color: 'var(--muted-text)'
-                        }
-                    }
-                }
-            }
-        });
-
-        // CSEE Division Chart
-        const cseeDivisionCtx = document.getElementById('cseeDivisionChart').getContext('2d');
-        
-        if (cseeResults.length > 0) {
-            const latestCsee = cseeResults[cseeResults.length - 1];
-            
-            cseeDivisionChart = new Chart(cseeDivisionCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Div I','Div II','Div III','Div IV','Div 0'],
-                    datasets: [{
-                        data: [
-                            latestCsee.division1 || 0,
-                            latestCsee.division2 || 0,
-                            latestCsee.division3 || 0,
-                            latestCsee.division4 || 0,
-                            latestCsee.division0 || 0
-                        ],
-                        backgroundColor: [
-                            '#00b894','#0984e3','#fdcb6e','#e17055','#d63031'
-                        ],
-                        borderWidth: 1,
-                        hoverOffset: 15
-                    }]
-                },
-                options: {
-                    plugins: {
-                        title: { 
-                            display: true, 
-                            text: `CSEE Division Distribution (${latestCsee.year})`, 
-                            color: 'var(--accent)',
-                            font: { size: 16 }
-                        },
-                        legend: { 
-                            position: 'right', 
-                            labels: { color: 'var(--muted-text)', font: { size: 12 } } 
-                        }
-                    }
-                }
-            });
-        } else {
-            cseeDivisionCtx.font = "16px Arial";
-            cseeDivisionCtx.fillStyle = "var(--muted-text)";
-            cseeDivisionCtx.textAlign = "center";
-            cseeDivisionCtx.fillText("No CSEE data available", cseeDivisionCtx.canvas.width / 2, cseeDivisionCtx.canvas.height / 2);
         }
-
-        // ACSEE Division Chart
-        const acseeDivisionCtx = document.getElementById('acseeDivisionChart').getContext('2d');
-        
-        if (acseeResults.length > 0) {
-            const latestAcsee = acseeResults[acseeResults.length - 1];
-            
-            acseeDivisionChart = new Chart(acseeDivisionCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Div I','Div II','Div III','Div IV','Div 0'],
-                    datasets: [{
-                        data: [
-                            latestAcsee.division1 || 0,
-                            latestAcsee.division2 || 0,
-                            latestAcsee.division3 || 0,
-                            latestAcsee.division4 || 0,
-                            latestAcsee.division0 || 0
-                        ],
-                        backgroundColor: [
-                            '#00b894','#0984e3','#fdcb6e','#e17055','#d63031'
-                        ],
-                        borderWidth: 1,
-                        hoverOffset: 15
-                    }]
-                },
-                options: {
-                    plugins: {
-                        title: { 
-                            display: true, 
-                            text: `ACSEE Division Distribution (${latestAcsee.year})`, 
-                            color: 'var(--accent)',
-                            font: { size: 16 }
-                        },
-                        legend: { 
-                            position: 'right', 
-                            labels: { color: 'var(--muted-text)', font: { size: 12 } } 
-                        }
-                    }
-                }
-            });
-        } else {
-            acseeDivisionCtx.font = "16px Arial";
-            acseeDivisionCtx.fillStyle = "var(--muted-text)";
-            acseeDivisionCtx.textAlign = "center";
-            acseeDivisionCtx.fillText("No ACSEE data available", acseeDivisionCtx.canvas.width / 2, acseeDivisionCtx.canvas.height / 2);
-        }
-
-        // Performance Comparison Chart
-        const performanceCtx = document.getElementById('performanceComparisonChart').getContext('2d');
-        
-        // Find the latest year with both CSEE and ACSEE results
-        let comparisonYear = null;
-        const yearsWithBoth = [];
-        
-        for (let i = 0; i < cseeResults.length; i++) {
-            const cseeYear = cseeResults[i].year;
-            if (acseeResults.some(acsee => acsee.year === cseeYear)) {
-                yearsWithBoth.push(cseeYear);
-            }
-        }
-        
-        if (yearsWithBoth.length > 0) {
-            comparisonYear = Math.max(...yearsWithBoth);
-            
-            const cseeForYear = cseeResults.find(result => result.year == comparisonYear);
-            const acseeForYear = acseeResults.find(result => result.year == comparisonYear);
-            
-            performanceChart = new Chart(performanceCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['CSEE', 'ACSEE'],
-                    datasets: [{
-                        label: `GPA Comparison (${comparisonYear})`,
-                        data: [cseeForYear.gpa, acseeForYear.gpa],
-                        backgroundColor: ['#74b9ff', '#00cec9'],
-                        borderColor: ['#0984e3', '#00b894'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    plugins: {
-                        legend: { 
-                            labels: { color: 'var(--muted-text)' } 
-                        }
-                    },
-                    scales: {
-                        y: { 
-                            reverse: true,
-                            ticks: { color: 'var(--muted-text)' },
-                            title: {
-                                display: true,
-                                text: 'GPA',
-                                color: 'var(--muted-text)'
-                            }
-                        },
-                        x: { 
-                            ticks: { color: 'var(--muted-text)' },
-                            title: {
-                                display: true,
-                                text: 'Exam Type',
-                                color: 'var(--muted-text)'
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            performanceCtx.font = "16px Arial";
-            performanceCtx.fillStyle = "var(--muted-text)";
-            performanceCtx.textAlign = "center";
-            performanceCtx.fillText("No comparison data available", performanceCtx.canvas.width / 2, performanceCtx.canvas.height / 2);
-        }
-
-        // Division Comparison Chart
-        const divisionComparisonCtx = document.getElementById('divisionComparisonChart').getContext('2d');
-        
-        if (yearsWithBoth.length > 0) {
-            const cseeForYear = cseeResults.find(result => result.year == comparisonYear);
-            const acseeForYear = acseeResults.find(result => result.year == comparisonYear);
-            
-            divisionComparisonChart = new Chart(divisionComparisonCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Div I', 'Div II', 'Div III', 'Div IV', 'Div 0'],
-                    datasets: [
-                        {
-                            label: `CSEE (${comparisonYear})`,
-                            data: [
-                                cseeForYear.division1 || 0,
-                                cseeForYear.division2 || 0,
-                                cseeForYear.division3 || 0,
-                                cseeForYear.division4 || 0,
-                                cseeForYear.division0 || 0
-                            ],
-                            backgroundColor: 'rgba(116,185,255,0.7)',
-                            borderColor: '#0984e3',
-                            borderWidth: 1
-                        },
-                        {
-                            label: `ACSEE (${comparisonYear})`,
-                            data: [
-                                acseeForYear.division1 || 0,
-                                acseeForYear.division2 || 0,
-                                acseeForYear.division3 || 0,
-                                acseeForYear.division4 || 0,
-                                acseeForYear.division0 || 0
-                            ],
-                            backgroundColor: 'rgba(0,206,201,0.7)',
-                            borderColor: '#00b894',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    plugins: {
-                        legend: { 
-                            labels: { color: 'var(--muted-text)' } 
-                        }
-                    },
-                    scales: {
-                        y: { 
-                            ticks: { color: 'var(--muted-text)' },
-                            title: {
-                                display: true,
-                                text: 'Number of Students',
-                                color: 'var(--muted-text)'
-                            }
-                        },
-                        x: { 
-                            ticks: { color: 'var(--muted-text)' },
-                            title: {
-                                display: true,
-                                text: 'Division',
-                                color: 'var(--muted-text)'
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            divisionComparisonCtx.font = "16px Arial";
-            divisionComparisonCtx.fillStyle = "var(--muted-text)";
-            divisionComparisonCtx.textAlign = "center";
-            divisionComparisonCtx.fillText("No comparison data available", divisionComparisonCtx.canvas.width / 2, divisionComparisonCtx.canvas.height / 2);
-        }
-    }
-    
-    // Initialize charts on page load
-    initCharts();
-
-    // Full screen functionality
-    const fullscreenModal = document.getElementById('fullscreenModal');
-    const fullscreenTitle = document.getElementById('fullscreenTitle');
-    const fullscreenCanvas = document.getElementById('fullscreenChart');
-    const closeFullscreenBtn = document.getElementById('closeFullscreen');
-    
-    // Open chart in full screen
-    document.querySelectorAll('.fullscreen-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const chartId = this.getAttribute('data-chart');
-            const title = this.getAttribute('data-title');
-            
-            // Set title
-            fullscreenTitle.textContent = title;
-            
-            // Get the chart instance
-            let chart;
-            switch(chartId) {
-                case 'cseeGpaChart': chart = cseeGpaChart; break;
-                case 'acseeGpaChart': chart = acseeGpaChart; break;
-                case 'cseeDivisionChart': chart = cseeDivisionChart; break;
-                case 'acseeDivisionChart': chart = acseeDivisionChart; break;
-                case 'performanceComparisonChart': chart = performanceChart; break;
-                case 'divisionComparisonChart': chart = divisionComparisonChart; break;
-            }
-            
-            if (chart) {
-                // Show modal
-                fullscreenModal.classList.add('active');
-                
-                // Destroy existing fullscreen chart if any
-                if (fullscreenChart) {
-                    fullscreenChart.destroy();
-                }
-                
-                // Create new chart in fullscreen
-                const ctx = fullscreenCanvas.getContext('2d');
-                fullscreenChart = new Chart(ctx, {
-                    type: chart.config.type,
-                    data: JSON.parse(JSON.stringify(chart.config.data)),
-                    options: JSON.parse(JSON.stringify(chart.config.options))
-                });
-                
-                // Adjust options for fullscreen
-                fullscreenChart.options.maintainAspectRatio = false;
-                fullscreenChart.options.plugins.title = {
-                    display: true,
-                    text: title,
-                    font: { size: 18 },
-                    color: 'var(--accent)'
-                };
-                fullscreenChart.update();
-            }
-        });
     });
+
+    // ACSEE GPA Chart
+    const acseeGpaCtx = document.getElementById('acseeGpaChart').getContext('2d');
+    acseeGpaChart = new Chart(acseeGpaCtx, {
+        type: 'line',
+        data: {
+            labels: acseeResults.map(result => result.year),
+            datasets: [{
+                label: 'ACSEE GPA',
+                data: acseeResults.map(result => result.gpa),
+                borderColor: '#00cec9',
+                backgroundColor: 'rgba(0,206,201,0.15)',
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: '#00b894',
+                pointBorderColor: '#fff',
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { labels: { color: 'var(--muted-text)' } }
+            },
+            scales: {
+                y: { 
+                    reverse: true, 
+                    ticks: { color: 'var(--muted-text)' },
+                    title: {
+                        display: true,
+                        text: 'GPA',
+                        color: 'var(--muted-text)'
+                    }
+                },
+                x: { 
+                    ticks: { color: 'var(--muted-text)' },
+                    title: {
+                        display: true,
+                        text: 'Year',
+                        color: 'var(--muted-text)'
+                    }
+                }
+            }
+        }
+    });
+
+    // CSEE Division Chart
+    const cseeDivisionCtx = document.getElementById('cseeDivisionChart').getContext('2d');
     
-    // Close full screen
-    closeFullscreenBtn.addEventListener('click', function() {
+    if (cseeResults.length > 0) {
+        const latestCsee = cseeResults.find(result => result.year == '{{ latest_year }}') || cseeResults[cseeResults.length - 1];
+        
+        cseeDivisionChart = new Chart(cseeDivisionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Div I','Div II','Div III','Div IV','Div 0'],
+                datasets: [{
+                    data: [
+                        latestCsee.division1 || 0,
+                        latestCsee.division2 || 0,
+                        latestCsee.division3 || 0,
+                        latestCsee.division4 || 0,
+                        latestCsee.division0 || 0
+                    ],
+                    backgroundColor: [
+                        '#00b894','#0984e3','#fdcb6e','#e17055','#d63031'
+                    ],
+                    borderWidth: 1,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                plugins: {
+                    title: { 
+                        display: true, 
+                        text: `CSEE Division Distribution (${latestCsee.year})`, 
+                        color: 'var(--accent)',
+                        font: { size: 16 }
+                    },
+                    legend: { 
+                        position: 'right', 
+                        labels: { color: 'var(--muted-text)', font: { size: 12 } } 
+                    }
+                }
+            }
+        });
+    } else {
+        cseeDivisionCtx.font = "16px Arial";
+        cseeDivisionCtx.fillStyle = "var(--muted-text)";
+        cseeDivisionCtx.textAlign = "center";
+        cseeDivisionCtx.fillText("No CSEE data available", cseeDivisionCtx.canvas.width / 2, cseeDivisionCtx.canvas.height / 2);
+    }
+
+    // ACSEE Division Chart
+    const acseeDivisionCtx = document.getElementById('acseeDivisionChart').getContext('2d');
+    
+    if (acseeResults.length > 0) {
+        const latestAcsee = acseeResults.find(result => result.year == '{{ latest_year }}') || acseeResults[acseeResults.length - 1];
+        
+        acseeDivisionChart = new Chart(acseeDivisionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Div I','Div II','Div III','Div IV','Div 0'],
+                datasets: [{
+                    data: [
+                        latestAcsee.division1 || 0,
+                        latestAcsee.division2 || 0,
+                        latestAcsee.division3 || 0,
+                        latestAcsee.division4 || 0,
+                        latestAcsee.division0 || 0
+                    ],
+                    backgroundColor: [
+                        '#00b894','#0984e3','#fdcb6e','#e17055','#d63031'
+                    ],
+                    borderWidth: 1,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                plugins: {
+                    title: { 
+                        display: true, 
+                        text: `ACSEE Division Distribution (${latestAcsee.year})`, 
+                        color: 'var(--accent)',
+                        font: { size: 16 }
+                    },
+                    legend: { 
+                        position: 'right', 
+                        labels: { color: 'var(--muted-text)', font: { size: 12 } } 
+                    }
+                }
+            }
+        });
+    } else {
+        acseeDivisionCtx.font = "16px Arial";
+        acseeDivisionCtx.fillStyle = "var(--muted-text)";
+        acseeDivisionCtx.textAlign = "center";
+        acseeDivisionCtx.fillText("No ACSEE data available", acseeDivisionCtx.canvas.width / 2, acseeDivisionCtx.canvas.height / 2);
+    }
+
+    // Performance Comparison Chart
+    const performanceCtx = document.getElementById('performanceComparisonChart').getContext('2d');
+    
+    // Find the selected year or the latest year with both CSEE and ACSEE results
+    const selectedYear = '{{ latest_year }}';
+    const cseeForYear = cseeResults.find(result => result.year == selectedYear);
+    const acseeForYear = acseeResults.find(result => result.year == selectedYear);
+    
+    if (cseeForYear && acseeForYear) {
+        performanceChart = new Chart(performanceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['CSEE', 'ACSEE'],
+                datasets: [{
+                    label: `GPA Comparison (${selectedYear})`,
+                    data: [cseeForYear.gpa, acseeForYear.gpa],
+                    backgroundColor: ['#74b9ff', '#00cec9'],
+                    borderColor: ['#0984e3', '#00b894'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { 
+                        labels: { color: 'var(--muted-text)' } 
+                    }
+                },
+                scales: {
+                    y: { 
+                        reverse: true,
+                        ticks: { color: 'var(--muted-text)' },
+                        title: {
+                            display: true,
+                            text: 'GPA',
+                            color: 'var(--muted-text)'
+                        }
+                    },
+                    x: { 
+                        ticks: { color: 'var(--muted-text)' },
+                        title: {
+                            display: true,
+                            text: 'Exam Type',
+                            color: 'var(--muted-text)'
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        performanceCtx.font = "16px Arial";
+        performanceCtx.fillStyle = "var(--muted-text)";
+        performanceCtx.textAlign = "center";
+        performanceCtx.fillText("No comparison data available", performanceCtx.canvas.width / 2, performanceCtx.canvas.height / 2);
+    }
+
+    // Division Comparison Chart
+    const divisionComparisonCtx = document.getElementById('divisionComparisonChart').getContext('2d');
+    
+    if (cseeForYear && acseeForYear) {
+        divisionComparisonChart = new Chart(divisionComparisonCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Div I', 'Div II', 'Div III', 'Div IV', 'Div 0'],
+                datasets: [
+                    {
+                        label: `CSEE (${selectedYear})`,
+                        data: [
+                            cseeForYear.division1 || 0,
+                            cseeForYear.division2 || 0,
+                            cseeForYear.division3 || 0,
+                            cseeForYear.division4 || 0,
+                            cseeForYear.division0 || 0
+                        ],
+                        backgroundColor: 'rgba(116,185,255,0.7)',
+                        borderColor: '#0984e3',
+                        borderWidth: 1
+                    },
+                    {
+                        label: `ACSEE (${selectedYear})`,
+                        data: [
+                            acseeForYear.division1 || 0,
+                            acseeForYear.division2 || 0,
+                            acseeForYear.division3 || 0,
+                            acseeForYear.division4 || 0,
+                            acseeForYear.division0 || 0
+                        ],
+                        backgroundColor: 'rgba(0,206,201,0.7)',
+                        borderColor: '#00b894',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                plugins: {
+                    legend: { 
+                        labels: { color: 'var(--muted-text)' } 
+                    }
+                },
+                scales: {
+                    y: { 
+                        ticks: { color: 'var(--muted-text)' },
+                        title: {
+                            display: true,
+                            text: 'Number of Students',
+                            color: 'var(--muted-text)'
+                        }
+                    },
+                    x: { 
+                        ticks: { color: 'var(--muted-text)' },
+                        title: {
+                            display: true,
+                            text: 'Division',
+                            color: 'var(--muted-text)'
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        divisionComparisonCtx.font = "16px Arial";
+        divisionComparisonCtx.fillStyle = "var(--muted-text)";
+        divisionComparisonCtx.textAlign = "center";
+        divisionComparisonCtx.fillText("No comparison data available", divisionComparisonCtx.canvas.width / 2, divisionComparisonCtx.canvas.height / 2);
+    }
+}
+
+// Initialize charts on page load
+initCharts();
+
+// Full screen functionality
+const fullscreenModal = document.getElementById('fullscreenModal');
+const fullscreenTitle = document.getElementById('fullscreenTitle');
+const fullscreenCanvas = document.getElementById('fullscreenChart');
+const closeFullscreenBtn = document.getElementById('closeFullscreen');
+
+// Open chart in full screen
+document.querySelectorAll('.fullscreen-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const chartId = this.getAttribute('data-chart');
+        const title = this.getAttribute('data-title');
+        
+        fullscreenTitle.textContent = title;
+        
+        let chart;
+        switch(chartId) {
+            case 'cseeGpaChart': chart = cseeGpaChart; break;
+            case 'acseeGpaChart': chart = acseeGpaChart; break;
+            case 'cseeDivisionChart': chart = cseeDivisionChart; break;
+            case 'acseeDivisionChart': chart = acseeDivisionChart; break;
+            case 'performanceComparisonChart': chart = performanceChart; break;
+            case 'divisionComparisonChart': chart = divisionComparisonChart; break;
+        }
+        
+        if (chart) {
+            fullscreenModal.classList.add('active');
+            
+            if (fullscreenChart) {
+                fullscreenChart.destroy();
+            }
+            
+            const ctx = fullscreenCanvas.getContext('2d');
+            fullscreenChart = new Chart(ctx, {
+                type: chart.config.type,
+                data: JSON.parse(JSON.stringify(chart.config.data)),
+                options: JSON.parse(JSON.stringify(chart.config.options))
+            });
+            
+            fullscreenChart.options.maintainAspectRatio = false;
+            fullscreenChart.options.plugins.title = {
+                display: true,
+                text: title,
+                font: { size: 18 },
+                color: 'var(--accent)'
+            };
+            fullscreenChart.update();
+        }
+    });
+});
+
+// Close full screen
+closeFullscreenBtn.addEventListener('click', function() {
+    fullscreenModal.classList.remove('active');
+    if (fullscreenChart) {
+        fullscreenChart.destroy();
+        fullscreenChart = null;
+    }
+});
+
+// Close modal when clicking outside
+fullscreenModal.addEventListener('click', function(e) {
+    if (e.target === fullscreenModal) {
         fullscreenModal.classList.remove('active');
         if (fullscreenChart) {
             fullscreenChart.destroy();
             fullscreenChart = null;
         }
-    });
-    
-    // Close modal when clicking outside
-    fullscreenModal.addEventListener('click', function(e) {
-        if (e.target === fullscreenModal) {
-            fullscreenModal.classList.remove('active');
-            if (fullscreenChart) {
-                fullscreenChart.destroy();
-                fullscreenChart = null;
-            }
-        }
-    });
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && fullscreenModal.classList.contains('active')) {
-            fullscreenModal.classList.remove('active');
-            if (fullscreenChart) {
-                fullscreenChart.destroy();
-                fullscreenChart = null;
-            }
-        }
-    });
+    }
+});
 
-    // Tab filtering functionality
-    document.querySelectorAll('.exam-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Update active tab
-            document.querySelectorAll('.exam-tab').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            const examType = this.getAttribute('data-exam');
-            const rows = document.querySelectorAll('.result-row');
-            
-            rows.forEach(row => {
-                if (examType === 'all' || row.getAttribute('data-exam') === examType) {
-                    row.style.display = 'table-row';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && fullscreenModal.classList.contains('active')) {
+        fullscreenModal.classList.remove('active');
+        if (fullscreenChart) {
+            fullscreenChart.destroy();
+            fullscreenChart = null;
+        }
+    }
+});
+
+// Tab filtering functionality
+document.querySelectorAll('.exam-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.exam-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        const examType = this.getAttribute('data-exam');
+        const year = this.getAttribute('data-year');
+        const rows = document.querySelectorAll('.result-row');
+        
+        rows.forEach(row => {
+            const rowExam = row.getAttribute('data-exam');
+            const rowYear = row.getAttribute('data-year');
+            if (examType === 'all' || (rowExam === examType && rowYear === year)) {
+                row.style.display = 'table-row';
+            } else {
+                row.style.display = 'none';
+            }
         });
     });
+});
 
-    // Graph tab functionality
-    document.querySelectorAll('.graph-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Update active tab
-            document.querySelectorAll('.graph-tab').forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            
-            const graphType = this.getAttribute('data-graph');
-            const sections = document.querySelectorAll('.graph-section');
-            
-            sections.forEach(section => {
-                section.style.display = 'none';
-            });
-            
-            document.getElementById(`${graphType}-section`).style.display = 'block';
+// Graph tab functionality
+document.querySelectorAll('.graph-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.graph-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        const graphType = this.getAttribute('data-graph');
+        const sections = document.querySelectorAll('.graph-section');
+        
+        sections.forEach(section => {
+            section.style.display = 'none';
         });
+        
+        document.getElementById(`${graphType}-section`).style.display = 'block';
     });
-
-
+});
 
 // Use pre-processed subject data from Django
 const subjectData = {{ subject_data_json|safe }};
@@ -1416,7 +1383,6 @@ function calculateSubjectAverages(subjectData) {
         let totalScore = 0;
         let totalStudents = 0;
         
-        // Convert grades to numerical values (A=1, B=2, C=3, D=4, E=5, S=6, F=7)
         const gradeValues = {
             'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'S': 6, 'F': 7
         };
@@ -1438,10 +1404,8 @@ function calculateSubjectAverages(subjectData) {
 function initSubjectCharts() {
     const subjectAverages = calculateSubjectAverages(subjectData);
     
-    // Prepare data for charts
     const subjects = Object.keys(subjectData);
     
-    // Subject Grade Distribution Chart (Stacked Bar)
     const subjectGradeCtx = document.getElementById('subjectGradeChart').getContext('2d');
     const subjectGradeChart = new Chart(subjectGradeCtx, {
         type: 'bar',
@@ -1494,7 +1458,7 @@ function initSubjectCharts() {
                 },
                 title: {
                     display: true,
-                    text: 'Grade Distribution by Subject',
+                    text: 'Grade Distribution by Subject ({{ latest_year }} {{ latest_exam }})',
                     color: 'var(--accent)'
                 }
             },
@@ -1516,10 +1480,9 @@ function initSubjectCharts() {
         }
     });
     
-    // Subject Performance Chart (Horizontal Bar - sorted by performance)
     const sortedSubjects = Object.entries(subjectAverages)
         .sort(([,a], [,b]) => a - b)
-        .slice(0, 10); // Top 10 subjects
+        .slice(0, 10);
     
     const subjectPerformanceCtx = document.getElementById('subjectPerformanceChart').getContext('2d');
     const subjectPerformanceChart = new Chart(subjectPerformanceCtx, {
@@ -1531,11 +1494,11 @@ function initSubjectCharts() {
                 label: 'Average Grade Score (Lower is Better)',
                 data: sortedSubjects.map(([,avg]) => avg),
                 backgroundColor: sortedSubjects.map(([,avg]) => {
-                    if (avg <= 2.0) return '#00b894'; // Excellent
-                    if (avg <= 3.0) return '#74b9ff'; // Good
-                    if (avg <= 4.0) return '#fdcb6e'; // Average
-                    if (avg <= 5.0) return '#e17055'; // Below Average
-                    return '#d63031'; // Poor
+                    if (avg <= 2.0) return '#00b894';
+                    if (avg <= 3.0) return '#74b9ff';
+                    if (avg <= 4.0) return '#fdcb6e';
+                    if (avg <= 5.0) return '#e17055';
+                    return '#d63031';
                 }),
                 borderColor: 'rgba(0,0,0,0.1)',
                 borderWidth: 1
@@ -1550,7 +1513,7 @@ function initSubjectCharts() {
                 },
                 title: {
                     display: true,
-                    text: 'Subject Performance (Lower Score = Better)',
+                    text: 'Subject Performance ({{ latest_year }} {{ latest_exam }})',
                     color: 'var(--accent)'
                 },
                 tooltip: {
@@ -1584,86 +1547,30 @@ function initSubjectCharts() {
         }
     });
     
-    // Add these charts to the fullscreen functionality
     window.subjectGradeChart = subjectGradeChart;
     window.subjectPerformanceChart = subjectPerformanceChart;
 }
 
 // Initialize subject charts when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Only initialize subject charts if we have subject data
     if (Object.keys(subjectData).length > 0) {
         initSubjectCharts();
     } else {
-        // Display message if no subject data
         document.getElementById('subjectGradeChart').getContext('2d').fillText(
-            "No subject data available", 
+            "No subject data available for {{ latest_exam }} {{ latest_year }}", 
             document.getElementById('subjectGradeChart').width / 2, 
             document.getElementById('subjectGradeChart').height / 2
         );
         document.getElementById('subjectPerformanceChart').getContext('2d').fillText(
-            "No subject data available", 
+            "No subject data available for {{ latest_exam }} {{ latest_year }}", 
             document.getElementById('subjectPerformanceChart').width / 2, 
             document.getElementById('subjectPerformanceChart').height / 2
         );
     }
     
-    // Add tooltips for subject badges
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-
-
-// Student details modal functionality
-document.querySelectorAll('.view-details-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const candidateNumber = this.getAttribute('data-student');
-        const sex = this.getAttribute('data-sex');
-        const aggregate = this.getAttribute('data-aggregate');
-        const division = this.getAttribute('data-division');
-        const subjectsJson = this.getAttribute('data-subjects');
-        const subjects = JSON.parse(subjectsJson);
-        
-        // Populate modal
-        document.getElementById('modal-candidate-number').textContent = candidateNumber;
-        document.getElementById('modal-sex').textContent = sex;
-        document.getElementById('modal-aggregate').textContent = aggregate;
-        document.getElementById('modal-division').textContent = division;
-        
-        // Set division badge color
-        const divisionBadge = document.getElementById('modal-division');
-        divisionBadge.className = 'badge ' + (
-            division === 'I' ? 'bg-success' :
-            division === 'II' ? 'bg-primary' :
-            division === 'III' ? 'bg-warning' :
-            division === 'IV' ? 'bg-secondary' : 'bg-danger'
-        );
-        
-        // Populate subjects
-        const subjectsContainer = document.getElementById('modal-subjects');
-        subjectsContainer.innerHTML = '';
-        
-        subjects.forEach(([subject, grade]) => {
-            const gradeClass = 
-                grade === 'A' ? 'text-success' :
-                grade === 'B' ? 'text-primary' :
-                grade === 'C' ? 'text-info' :
-                grade === 'D' ? 'text-warning' :
-                (grade === 'E' || grade === 'S') ? 'text-secondary' : 'text-danger';
-                
-            const subjectElement = document.createElement('div');
-            subjectElement.className = 'd-flex justify-content-between align-items-center py-2 border-bottom';
-            subjectElement.innerHTML = `
-                <span class="subject-name">${subject}</span>
-                <span class="grade-badge fw-bold ${gradeClass}">${grade}</span>
-            `;
-            subjectsContainer.appendChild(subjectElement);
-        });
-        
-        // Show modal
-        new bootstrap.Modal(document.getElementById('studentDetailsModal')).show();
     });
 });
 
@@ -1676,33 +1583,31 @@ function openSubjectChartFullscreen(chartId, modalId, title) {
     const canvas = modal.querySelector('canvas');
     const titleElement = modal.querySelector('.fullscreen-title');
     
-    titleElement.textContent = title;
+    titleElement.textContent = title.replace('Subject Grade Distribution', `Subject Grade Distribution ({{ latest_year }} {{ latest_exam }})`)
+                                    .replace('Top Performing Subjects', `Top Performing Subjects ({{ latest_year }} {{ latest_exam }})`);
     modal.classList.add('active');
     
-    // Destroy existing chart if any
     const existingChart = Chart.getChart(canvas);
     if (existingChart) {
         existingChart.destroy();
     }
     
-    // Create new chart in fullscreen
     const fullscreenChart = new Chart(canvas, {
         type: chart.config.type,
         data: JSON.parse(JSON.stringify(chart.config.data)),
         options: JSON.parse(JSON.stringify(chart.config.options))
     });
     
-    // Adjust options for fullscreen
     fullscreenChart.options.maintainAspectRatio = false;
     fullscreenChart.options.plugins.title = {
         display: true,
-        text: title,
+        text: title.replace('Subject Grade Distribution', `Subject Grade Distribution ({{ latest_year }} {{ latest_exam }})`)
+                   .replace('Top Performing Subjects', `Top Performing Subjects ({{ latest_year }} {{ latest_exam }})`),
         font: { size: 18 },
         color: 'var(--accent)'
     };
     fullscreenChart.update();
     
-    // Store reference for later cleanup
     modal.dataset.chartInstance = fullscreenChart;
 }
 
@@ -1712,7 +1617,6 @@ document.querySelectorAll('.close-fullscreen[data-modal]').forEach(btn => {
         const modalId = this.getAttribute('data-modal');
         const modal = document.getElementById(modalId);
         
-        // Destroy chart instance
         if (modal.dataset.chartInstance) {
             const chart = Chart.getChart(modal.querySelector('canvas'));
             if (chart) {
@@ -1743,7 +1647,6 @@ document.querySelectorAll('.fullscreen-modal').forEach(modal => {
     modal.addEventListener('click', function(e) {
         if (e.target === this) {
             this.classList.remove('active');
-            // Destroy chart instance
             if (this.dataset.chartInstance) {
                 const chart = Chart.getChart(this.querySelector('canvas'));
                 if (chart) {
@@ -1760,7 +1663,6 @@ document.addEventListener('keydown', function(e) {
         document.querySelectorAll('.fullscreen-modal').forEach(modal => {
             if (modal.classList.contains('active')) {
                 modal.classList.remove('active');
-                // Destroy chart instance
                 if (modal.dataset.chartInstance) {
                     const chart = Chart.getChart(modal.querySelector('canvas'));
                     if (chart) {
@@ -1772,6 +1674,5 @@ document.addEventListener('keydown', function(e) {
         });
     }
 });
-
 </script>
 {% endblock %}
