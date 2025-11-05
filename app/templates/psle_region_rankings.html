@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}PSLE {{ year }} - {{ region }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/psle/{{ year }}/">PSLE {{ year }}</a></li>
+            <li class="breadcrumb-item active">{{ region }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-map-marker-alt text-primary"></i>
+                        PSLE {{ year }} - Mkoa wa {{ region }}
+                    </h1>
+                    <p class="text-muted">Shule za mkoa wa {{ region }} zilizoorodheshwa kulingana na wastani wa alama</p>
+                </div>
+                <div class="text-end">
+                    <div class="btn-group">
+                        <a href="/psle/{{ year }}/" class="btn btn-outline-primary">Taifa</a>
+                        <a href="/psle/{{ year }}/{{ region }}/" class="btn btn-primary active">{{ region }}</a>
+                        {% for dist in districts %}
+                            <a href="/psle/{{ year }}/{{ region }}/{{ dist }}/" class="btn btn-outline-primary">{{ dist }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schools Table -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fas fa-school"></i>
+                Shule za Mkoa wa {{ region }}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 school-table">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="80">Nafasi</th>
+                            <th>Jina la Shule</th>
+                            <th>Wilaya</th>
+                            <th>Halmashauri</th>
+                            <th width="120">Wastani</th>
+                            <th width="120">Daraja</th>
+                            <th width="100">Wanafunzi</th>
+                            <th width="150">Alama za Daraja</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr class="{% if result.rank == 1 %}top-1{% elif result.rank <= 3 %}top-3{% endif %} 
+                                  {% if 'Daraja A' in result.performance_level %}performance-a{% endif %}">
+                            <td class="text-center">
+                                {% if result.rank == 1 %}
+                                    <span class="badge bg-warning text-dark">🥇 {{ result.rank }}</span>
+                                {% elif result.rank == 2 %}
+                                    <span class="badge bg-secondary">🥈 {{ result.rank }}</span>
+                                {% elif result.rank == 3 %}
+                                    <span class="badge bg-danger">🥉 {{ result.rank }}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark">{{ result.rank }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ result.school.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ result.school.code }}</small>
+                            </td>
+                            <td>
+                                {% if result.school.district != "Unknown" %}
+                                <a href="/psle/{{ year }}/{{ region }}/{{ result.school.district }}/" class="text-decoration-none">
+                                    {{ result.school.district }}
+                                </a>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if result.school.council != "Unknown" %}
+                                <a href="/psle/{{ year }}/{{ region }}/{{ result.school.district }}/{{ result.school.council }}/" class="text-decoration-none">
+                                    {{ result.school.council }}
+                                </a>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <strong class="text-primary">{{ result.average_score }}</strong>
+                            </td>
+                            <td class="text-center">
+                                {% if 'Daraja A' in result.performance_level %}
+                                    <span class="badge bg-success">{{ result.performance_level }}</span>
+                                {% elif 'Daraja B' in result.performance_level %}
+                                    <span class="badge bg-info">{{ result.performance_level }}</span>
+                                {% elif 'Daraja C' in result.performance_level %}
+                                    <span class="badge bg-warning">{{ result.performance_level }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ result.performance_level }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <strong>{{ result.total }}</strong>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-between small">
+                                    <span class="text-success">A: {{ result.grade_a|default:0 }}</span>
+                                    <span class="text-info">B: {{ result.grade_b|default:0 }}</span>
+                                    <span class="text-warning">C: {{ result.grade_c|default:0 }}</span>
+                                    <span class="text-orange">D: {{ result.grade_d|default:0 }}</span>
+                                    <span class="text-danger">E: {{ result.grade_e|default:0 }}</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                Hakuna matokeo yaliyopatikana kwa mkoa wa {{ region }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .school-table { font-size: 0.9rem; }
+    .top-1 { background-color: #ffd700 !important; }
+    .top-3 { background-color: #e8f4fd !important; }
+    .performance-a { border-left: 4px solid #28a745; }
+    .breadcrumb { background-color: #e9ecef; }
+    .text-orange { color: #fd7e14 !important; }
+</style>
+{% endblock %}

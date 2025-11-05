@@ -1,0 +1,182 @@
+<!-- templates/psle_council_rankings.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSLE {{ year }} - {{ council }}, {{ district }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .school-table { font-size: 0.9rem; }
+        .breadcrumb { background-color: #e9ecef; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-graduation-cap"></i> NECTA Results
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link text-white" href="/">Home</a>
+                <a class="nav-link text-white" href="/psle/{{ year }}/">PSLE {{ year }}</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/psle/{{ year }}/">PSLE {{ year }}</a></li>
+                <li class="breadcrumb-item"><a href="/psle/{{ year }}/{{ region }}/">{{ region }}</a></li>
+                <li class="breadcrumb-item"><a href="/psle/{{ year }}/{{ region }}/{{ district }}/">{{ district }}</a></li>
+                <li class="breadcrumb-item active">{{ council }}</li>
+            </ol>
+        </nav>
+
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">
+                            <i class="fas fa-building text-primary"></i>
+                            PSLE {{ year }} - Halmashauri ya {{ council }}, {{ district }}
+                        </h1>
+                        <p class="text-muted">Shule za halmashauri ya {{ council }} zilizoorodheshwa kulingana na wastani wa alama</p>
+                    </div>
+                    <div class="text-end">
+                        <div class="btn-group">
+                            <a href="/psle/{{ year }}/{{ region }}/{{ district }}/" class="btn btn-outline-primary">{{ district }}</a>
+                            <a href="/psle/{{ year }}/{{ region }}/{{ district }}/{{ council }}/" class="btn btn-primary active">{{ council }}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        {% if results %}
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-primary">{{ results|length }}</h3>
+                        <p class="text-muted mb-0">Jumla ya Shule</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-success">
+                            {% with total_students=0 %}
+                                {% for result in results %}
+                                    {{ total_students|add:result.total }}
+                                {% endfor %}
+                            {% endwith %}
+                        </h3>
+                        <p class="text-muted mb-0">Wanafunzi Waliofanya</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="text-info">{{ results.0.average_score }}</h3>
+                        <p class="text-muted mb-0">Wastani Bora zaidi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Schools Table -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-school"></i>
+                    Shule za Halmashauri ya {{ council }}
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0 school-table">
+                        <thead class="table-dark">
+                            <tr>
+                                <th width="80">Nafasi</th>
+                                <th>Jina la Shule</th>
+                                <th width="120">Wastani</th>
+                                <th width="120">Daraja</th>
+                                <th width="100">Wanafunzi</th>
+                                <th width="250">Uwiano wa Daraja</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr>
+                                <td class="text-center">
+                                    <span class="badge {% if result.rank == 1 %}bg-warning text-dark{% else %}bg-light text-dark{% endif %}">
+                                        {{ result.rank }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong>{{ result.school.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ result.school.code }}</small>
+                                </td>
+                                <td class="text-center">
+                                    <strong class="text-primary">{{ result.average_score }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    {% if 'Daraja A' in result.performance_level %}
+                                        <span class="badge bg-success">{{ result.performance_level }}</span>
+                                    {% elif 'Daraja B' in result.performance_level %}
+                                        <span class="badge bg-info">{{ result.performance_level }}</span>
+                                    {% elif 'Daraja C' in result.performance_level %}
+                                        <span class="badge bg-warning">{{ result.performance_level }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ result.performance_level }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <strong>{{ result.total }}</strong>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 25px;">
+                                        {% with total=result.grade_a|add:result.grade_b|add:result.grade_c|add:result.grade_d|add:result.grade_e %}
+                                        {% if total > 0 %}
+                                        <div class="progress-bar bg-success" style="width: {% widthratio result.grade_a total 100 %}%" title="Daraja A: {{ result.grade_a }}">{{ result.grade_a }}A</div>
+                                        <div class="progress-bar bg-info" style="width: {% widthratio result.grade_b total 100 %}%" title="Daraja B: {{ result.grade_b }}">{{ result.grade_b }}B</div>
+                                        <div class="progress-bar bg-warning" style="width: {% widthratio result.grade_c total 100 %}%" title="Daraja C: {{ result.grade_c }}">{{ result.grade_c }}C</div>
+                                        <div class="progress-bar bg-orange" style="width: {% widthratio result.grade_d total 100 %}%" title="Daraja D: {{ result.grade_d }}">{{ result.grade_d }}D</div>
+                                        <div class="progress-bar bg-danger" style="width: {% widthratio result.grade_e total 100 %}%" title="Daraja E: {{ result.grade_e }}">{{ result.grade_e }}E</div>
+                                        {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    Hakuna matokeo yaliyopatikana kwa halmashauri ya {{ council }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .bg-orange { background-color: #fd7e14 !important; }
+        .progress-bar { font-size: 0.7rem; font-weight: bold; }
+    </style>
+</body>
+</html>

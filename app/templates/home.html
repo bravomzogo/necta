@@ -295,86 +295,85 @@ document.addEventListener('DOMContentLoaded', function() {
                             <h5 class="mb-0"><i class="fas fa-search me-2 text-primary"></i>Find School Rankings</h5>
                         </div>
                         <div class="card-body p-3 p-md-4">
-                            <form method="get" action="{% url 'school_rankings' 'ACSEE' 2023 %}" id="rankingForm">
-                                <!-- Desktop layout -->
-                                <div class="desktop-search-layout row g-3 align-items-end">
-                                    <div class="col-md-5">
-                                        <label for="exam_type" class="form-label text-muted small mb-1">
-                                            <i class="fas fa-book me-1 text-primary"></i>Exam Type
-                                        </label>
-                                        <div class="input-group input-group-search">
-                                            <span class="input-group-text">
-                                                <i class="fas fa-graduation-cap"></i>
-                                            </span>
-                                            <select class="form-select" name="exam_type" id="exam_type" required>
-                                                {% for exam in exam_types %}
-                                                <option value="{{ exam }}" {% if exam == 'ACSEE' %}selected{% endif %}>{{ exam }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
+                            <!-- Remove the form and use JavaScript navigation -->
+                            <!-- Desktop layout -->
+                            <div class="desktop-search-layout row g-3 align-items-end">
+                                <div class="col-md-5">
+                                    <label for="exam_type" class="form-label text-muted small mb-1">
+                                        <i class="fas fa-book me-1 text-primary"></i>Exam Type
+                                    </label>
+                                    <div class="input-group input-group-search">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </span>
+                                        <select class="form-select" id="exam_type" required>
+                                            {% for exam in exam_types %}
+                                            <option value="{{ exam }}" {% if exam == 'ACSEE' %}selected{% endif %}>{{ exam }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
-                                    <div class="col-md-5">
-                                        <label for="year" class="form-label text-muted small mb-1">
-                                            <i class="fas fa-calendar me-1 text-primary"></i>Year
-                                        </label>
-                                        <div class="input-group input-group-search">
-                                            <span class="input-group-text">
-                                                <i class="fas fa-calendar-days"></i>
-                                            </span>
-                                            <select class="form-select" name="year" id="year" required>
-                                                {% for year in years %}
-                                                <option value="{{ year }}" {% if year == 2023 %}selected{% endif %}>{{ year }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="year" class="form-label text-muted small mb-1">
+                                        <i class="fas fa-calendar me-1 text-primary"></i>Year
+                                    </label>
+                                    <div class="input-group input-group-search">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar-days"></i>
+                                        </span>
+                                        <select class="form-select" id="year" required>
+                                            {% for year in years %}
+                                            <option value="{{ year }}" {% if year == 2023 %}selected{% endif %}>{{ year }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
-                                    <div class="col-md-2">
-                                        <button type="submit" class="btn btn-primary w-100 search-submit-btn">
-                                            <span class="d-none d-md-inline"><i class="fas fa-chart-line me-1"></i>View</span>
-                                            <span class="d-md-none"><i class="fas fa-chart-line"></i></span>
-                                        </button>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-primary w-100 search-submit-btn" id="viewRankingsBtn">
+                                        <span class="d-none d-md-inline"><i class="fas fa-chart-line me-1"></i>View</span>
+                                        <span class="d-md-none"><i class="fas fa-chart-line"></i></span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Mobile alternative layout -->
+                            <div class="mobile-search-layout">
+                                <div class="mb-3">
+                                    <label for="exam_type_mobile" class="form-label text-muted small mb-1">
+                                        <i class="fas fa-book me-1 text-primary"></i>Exam Type
+                                    </label>
+                                    <div class="input-group input-group-search">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </span>
+                                        <select class="form-select" id="exam_type_mobile" required>
+                                            {% for exam in exam_types %}
+                                            <option value="{{ exam }}" {% if exam == 'ACSEE' %}selected{% endif %}>{{ exam }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                 </div>
                                 
-                                <!-- Mobile alternative layout -->
-                                <div class="mobile-search-layout">
-                                    <div class="mb-3">
-                                        <label for="exam_type_mobile" class="form-label text-muted small mb-1">
-                                            <i class="fas fa-book me-1 text-primary"></i>Exam Type
-                                        </label>
-                                        <div class="input-group input-group-search">
-                                            <span class="input-group-text">
-                                                <i class="fas fa-graduation-cap"></i>
-                                            </span>
-                                            <select class="form-select" name="exam_type" id="exam_type_mobile" required>
-                                                {% for exam in exam_types %}
-                                                <option value="{{ exam }}" {% if exam == 'ACSEE' %}selected{% endif %}>{{ exam }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
+                                <div class="mb-3">
+                                    <label for="year_mobile" class="form-label text-muted small mb-1">
+                                        <i class="fas fa-calendar me-1 text-primary"></i>Year
+                                    </label>
+                                    <div class="input-group input-group-search">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar-days"></i>
+                                        </span>
+                                        <select class="form-select" id="year_mobile" required>
+                                            {% for year in years %}
+                                            <option value="{{ year }}" {% if year == 2023 %}selected{% endif %}>{{ year }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="year_mobile" class="form-label text-muted small mb-1">
-                                            <i class="fas fa-calendar me-1 text-primary"></i>Year
-                                        </label>
-                                        <div class="input-group input-group-search">
-                                            <span class="input-group-text">
-                                                <i class="fas fa-calendar-days"></i>
-                                            </span>
-                                            <select class="form-select" name="year" id="year_mobile" required>
-                                                {% for year in years %}
-                                                <option value="{{ year }}" {% if year == 2023 %}selected{% endif %}>{{ year }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <button type="submit" class="btn btn-primary w-100 search-submit-btn py-3">
-                                        <i class="fas fa-chart-line me-2"></i>View Rankings
-                                    </button>
                                 </div>
-                            </form>
+                                
+                                <button type="button" class="btn btn-primary w-100 search-submit-btn py-3" id="viewRankingsBtnMobile">
+                                    <i class="fas fa-chart-line me-2"></i>View Rankings
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -938,17 +937,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {% block extra_js %}
 <script>
-    // Update form action when selections change
     document.addEventListener('DOMContentLoaded', function() {
         const desktopExam = document.getElementById('exam_type');
         const desktopYear = document.getElementById('year');
         const mobileExam = document.getElementById('exam_type_mobile');
         const mobileYear = document.getElementById('year_mobile');
-        const form = document.getElementById('rankingForm');
+        const viewBtn = document.getElementById('viewRankingsBtn');
+        const viewBtnMobile = document.getElementById('viewRankingsBtnMobile');
         
-        // Function to update form action based on current selections
-        function updateFormAction() {
-            // Determine which form elements are visible and use their values
+        // Function to get current selections
+        function getCurrentSelections() {
             let examType, year;
             
             // Check if mobile layout is visible
@@ -962,21 +960,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 year = desktopYear.value;
             }
             
-            // Update the form action
-            form.action = `/rankings/${examType}/${year}/`;
+            return { examType, year };
         }
         
-        // Add event listeners to all form elements
-        if (desktopExam) desktopExam.addEventListener('change', updateFormAction);
-        if (desktopYear) desktopYear.addEventListener('change', updateFormAction);
-        if (mobileExam) mobileExam.addEventListener('change', updateFormAction);
-        if (mobileYear) mobileYear.addEventListener('change', updateFormAction);
+        // Function to navigate to the correct rankings page
+        function navigateToRankings() {
+            const { examType, year } = getCurrentSelections();
+            
+            let url;
+            if (examType === 'PSLE') {
+                // For PSLE, use the PSLE rankings URL
+                url = `/psle/${year}/`;
+            } else {
+                // For ACSEE and other exams, use the general rankings URL
+                url = `/rankings/${examType}/${year}/`;
+            }
+            
+            console.log('Navigating to:', url);
+            window.location.href = url;
+        }
         
-        // Also update on window resize in case user changes device orientation
-        window.addEventListener('resize', updateFormAction);
+        // Add event listeners to buttons
+        if (viewBtn) {
+            viewBtn.addEventListener('click', navigateToRankings);
+        }
         
-        // Initialize form action
-        updateFormAction();
+        if (viewBtnMobile) {
+            viewBtnMobile.addEventListener('click', navigateToRankings);
+        }
+        
+        // Also allow Enter key in selects
+        function handleEnterKey(e) {
+            if (e.key === 'Enter') {
+                navigateToRankings();
+            }
+        }
+        
+        if (desktopExam) desktopExam.addEventListener('keypress', handleEnterKey);
+        if (desktopYear) desktopYear.addEventListener('keypress', handleEnterKey);
+        if (mobileExam) mobileExam.addEventListener('keypress', handleEnterKey);
+        if (mobileYear) mobileYear.addEventListener('keypress', handleEnterKey);
+        
+        // Sync mobile and desktop selects
+        function syncSelects(mainId, mobileId) {
+            const mainSelect = document.getElementById(mainId);
+            const mobileSelect = document.getElementById(mobileId);
+            
+            if (mainSelect && mobileSelect) {
+                mainSelect.addEventListener('change', function() {
+                    mobileSelect.value = this.value;
+                });
+                
+                mobileSelect.addEventListener('change', function() {
+                    mainSelect.value = this.value;
+                });
+            }
+        }
+        
+        syncSelects('exam_type', 'exam_type_mobile');
+        syncSelects('year', 'year_mobile');
         
         // Enhanced school item interactions
         const schoolItems = document.querySelectorAll('.top-school-item');
@@ -989,27 +1031,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.style.transform = 'translateX(0)';
             });
         });
-        
-        // Sync mobile and desktop selects
-        function syncSelects(mainId, mobileId) {
-            const mainSelect = document.getElementById(mainId);
-            const mobileSelect = document.getElementById(mobileId);
-            
-            if (mainSelect && mobileSelect) {
-                mainSelect.addEventListener('change', function() {
-                    mobileSelect.value = this.value;
-                    updateFormAction(); // Update after syncing
-                });
-                
-                mobileSelect.addEventListener('change', function() {
-                    mainSelect.value = this.value;
-                    updateFormAction(); // Update after syncing
-                });
-            }
-        }
-        
-        syncSelects('exam_type', 'exam_type_mobile');
-        syncSelects('year', 'year_mobile');
     });
 </script>
 {% endblock %}

@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}PSLE {{ year }} - School Rankings - NECTA Results{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* PSLE specific styles using base template's CSS variables */
+    .ranking-table {
+        font-size: 0.9rem;
+        color: var(--text-color);
+    }
+    
+    .ranking-table th {
+        background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: none;
+    }
+    
+    .ranking-table td {
+        border-color: var(--border-color);
+    }
+    
+    .ranking-table tr.top-school {
+        background-color: rgba(35, 134, 54, 0.15);
+        transition: background-color 0.3s ease;
+    }
+    
+    .ranking-table tr.top-school:hover {
+        background-color: rgba(35, 134, 54, 0.3);
+    }
+    
+    .ranking-table tr:hover:not(.top-school) {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    .score-cell {
+        font-weight: 600;
+        color: var(--accent);
+    }
+    
+    .grade-cell {
+        text-align: center;
+        font-weight: 500;
+    }
+
+    /* Performance level badges */
+    .performance-a { color: #28a745; font-weight: bold; }
+    .performance-b { color: #17a2b8; font-weight: bold; }
+    .performance-c { color: #ffc107; font-weight: bold; }
+    .performance-d { color: #fd7e14; font-weight: bold; }
+    .performance-e { color: #dc3545; font-weight: bold; }
+
+    /* School links */
+    .ranking-table td a {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+    
+    .stat-card {
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        border-color: var(--accent);
+    }
+    
+    .stat-number {
+        font-size: 1.9rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--muted-text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-card {
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .export-buttons {
+        margin: 1.5rem 0;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    .alert-warning {
+        background-color: rgba(212, 167, 44, 0.15);
+        border: 1px solid rgba(212, 167, 44, 0.3);
+        color: #b68c2a;
+    }
+
+    /* Grade distribution bars */
+    .grade-distribution {
+        display: flex;
+        height: 4px;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 2px;
+    }
+    
+    .grade-a { background-color: #28a745; }
+    .grade-b { background-color: #17a2b8; }
+    .grade-c { background-color: #ffc107; }
+    .grade-d { background-color: #fd7e14; }
+    .grade-e { background-color: #dc3545; }
+
+    /* Dark mode adjustments */
+    body.dark-mode .ranking-table td {
+        color: #e9ecef;
+    }
+    
+    body.dark-mode .ranking-table td a {
+        color: #e9ecef;
+    }
+    
+    body.dark-mode .ranking-table th {
+        color: #fff;
+    }
+
+    body.dark-mode .ranking-table tr:hover:not(.top-school) {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    body.dark-mode .ranking-table tr.top-school {
+        background-color: rgba(35, 134, 54, 0.25);
+    }
+    
+    body.dark-mode .ranking-table tr.top-school:hover {
+        background-color: rgba(35, 134, 54, 0.4);
+    }
+    
+    body.dark-mode .alert-warning {
+        background-color: rgba(212, 167, 44, 0.2);
+        border: 1px solid rgba(212, 167, 44, 0.4);
+        color: #f0c674;
+    }
+
+    /* Mobile-specific styles */
+    @media (max-width: 768px) {
+        .ranking-table {
+            font-size: 0.8rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+        }
+        
+        .export-buttons {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        
+        .export-buttons > div {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .export-buttons .btn {
+            width: 100%;
+            margin: 0.25rem 0;
+        }
+        
+        .filter-card .row {
+            flex-direction: column;
+        }
+        
+        .filter-card .col-md-4,
+        .filter-card .col-md-5,
+        .filter-card .col-md-3 {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        /* Hide some columns on mobile */
+        .mobile-hidden {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">
+            <i class="fas fa-graduation-cap me-2" style="color: var(--accent);"></i>PSLE {{ year }} Rankings
+        </h1>
+        <p class="text-muted mb-0">Primary School Leaving Examination Results - Higher average scores are better</p>
+    </div>
+    <a href="{% url 'home' %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-card">
+    <div class="row">
+        <div class="col-md-4 mb-2">
+            <label class="form-label">Filter by Region</label>
+            <select class="form-select" id="regionFilter">
+                <option value="">All Regions</option>
+                {% for region in regions %}
+                <option value="{{ region }}">{{ region }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-5 mb-2">
+            <label class="form-label">Search Schools</label>
+            <div class="input-group">
+                <span class="input-group-text" style="background-color: var(--secondary-bg); color: var(--text-color);">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by school name or code...">
+            </div>
+        </div>
+        <div class="col-md-3 mb-2 d-flex align-items-end">
+            <button class="btn btn-outline-secondary w-100" id="resetFilters">
+                <i class="fas fa-refresh me-1"></i>Reset Filters
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_schools|intcomma }}</div>
+        <div class="stat-label">Total Schools</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_students|intcomma }}</div>
+        <div class="stat-label">Total Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ avg_score }}</div>
+        <div class="stat-label">Average Score</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ best_score }}</div>
+        <div class="stat-label">Best Score</div>
+    </div>
+</div>
+
+<!-- Export Buttons -->
+<div class="export-buttons d-flex flex-wrap justify-content-between align-items-center">
+    <div class="mb-2 mb-md-0">
+        <span class="text-muted">
+            <i class="fas fa-info-circle me-1"></i>
+            Showing <strong id="visibleCount">{{ results|length }}</strong> of {{ results|length }} schools
+        </span>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-success" onclick="exportTableToCSV('psle_rankings_{{ year }}.csv')">
+            <i class="fas fa-download me-1"></i><span class="d-none d-md-inline">Export</span> CSV
+        </button>
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i><span class="d-none d-md-inline">Print</span>
+        </button>
+    </div>
+</div>
+
+<!-- Rankings Table -->
+<div class="card mt-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover ranking-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th width="80">Rank</th>
+                        <th width="100">School Code</th>
+                        <th>School Name</th>
+                        <th width="120" class="mobile-hidden">Region</th>
+                        <th width="120" class="mobile-hidden">District</th>
+                        <th width="100">Avg Score</th>
+                        <th width="120">Performance</th>
+                        <th width="90" class="text-center">Students</th>
+                        <th width="180" class="mobile-hidden">Grade Distribution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr class="{% if result.rank <= 10 %}top-school{% endif %}">
+                        <td>
+                            <span class="badge {% if result.rank == 1 %}bg-warning text-dark{% elif result.rank <= 3 %}bg-secondary{% elif result.rank <= 10 %}bg-primary{% else %}bg-dark text-light{% endif %}">
+                                {{ result.rank }}
+                            </span>
+                        </td>
+                        <td><strong>{{ result.school.code }}</strong></td>
+                        <td>
+    <a href="{% url 'psle_school_detail' result.school.id %}?year={{ year }}" class="text-decoration-none">
+        {{ result.school.name }}
+    </a>
+</td>
+                        <td class="mobile-hidden">
+                            <span class="badge" style="background: var(--accent); color: #000;">{{ result.school.region }}</span>
+                        </td>
+                        <td class="mobile-hidden">{{ result.school.district|default:"-" }}</td>
+                        <td class="score-cell">{{ result.average_score }}</td>
+                        <td>
+                            {% if "Daraja A" in result.performance_level %}
+                                <span class="performance-a">{{ result.performance_level }}</span>
+                            {% elif "Daraja B" in result.performance_level %}
+                                <span class="performance-b">{{ result.performance_level }}</span>
+                            {% elif "Daraja C" in result.performance_level %}
+                                <span class="performance-c">{{ result.performance_level }}</span>
+                            {% elif "Daraja D" in result.performance_level %}
+                                <span class="performance-d">{{ result.performance_level }}</span>
+                            {% elif "Daraja E" in result.performance_level %}
+                                <span class="performance-e">{{ result.performance_level }}</span>
+                            {% else %}
+                                <span class="text-muted">{{ result.performance_level }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center fw-bold">{{ result.total }}</td>
+                        <td class="mobile-hidden">
+                            {% if result.total > 0 %}
+                            <div class="grade-distribution">
+                                <div class="grade-a" style="width: {% widthratio result.grade_a result.total 100 %}%"></div>
+                                <div class="grade-b" style="width: {% widthratio result.grade_b result.total 100 %}%"></div>
+                                <div class="grade-c" style="width: {% widthratio result.grade_c result.total 100 %}%"></div>
+                                <div class="grade-d" style="width: {% widthratio result.grade_d result.total 100 %}%"></div>
+                                <div class="grade-e" style="width: {% widthratio result.grade_e result.total 100 %}%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small mt-1">
+                                <span class="text-success">A: {{ result.grade_a }}</span>
+                                <span class="text-info">B: {{ result.grade_b }}</span>
+                                <span class="text-warning">C: {{ result.grade_c }}</span>
+                                <span class="text-orange">D: {{ result.grade_d }}</span>
+                                <span class="text-danger">E: {{ result.grade_e }}</span>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">No data</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+                                <p>No PSLE results found for {{ year }}</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- No results message -->
+<div class="alert alert-warning d-none mt-3" id="noResultsMessage">
+    <i class="fas fa-exclamation-triangle me-2"></i>No schools match your current filters.
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filter functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const regionFilter = document.getElementById('regionFilter');
+        const searchInput = document.getElementById('searchInput');
+        const resetButton = document.getElementById('resetFilters');
+        const rows = document.querySelectorAll('.ranking-table tbody tr');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        const visibleCount = document.getElementById('visibleCount');
+        
+        function filterTable() {
+            const regionValue = regionFilter.value.trim();
+            const searchValue = searchInput.value.toLowerCase().trim();
+            let visibleRows = 0;
+            
+            rows.forEach(row => {
+                const schoolName = row.cells[2].textContent.toLowerCase().trim();
+                const schoolCode = row.cells[1].textContent.toLowerCase().trim();
+                
+                // Get region text from the badge element
+                const regionCell = row.cells[3];
+                const region = regionCell ? regionCell.textContent.trim() : '';
+                
+                // Check matches - case insensitive for region
+                const matchesRegion = regionValue === '' || 
+                                    region.toLowerCase() === regionValue.toLowerCase();
+                const matchesSearch = searchValue === '' || 
+                                    schoolName.includes(searchValue) || 
+                                    schoolCode.includes(searchValue);
+                
+                if (matchesRegion && matchesSearch) {
+                    row.style.display = '';
+                    visibleRows++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Update visible count
+            visibleCount.textContent = visibleRows;
+            
+            // Show/hide no results message
+            if (visibleRows === 0) {
+                noResultsMessage.classList.remove('d-none');
+            } else {
+                noResultsMessage.classList.add('d-none');
+            }
+        }
+        
+        regionFilter.addEventListener('change', filterTable);
+        searchInput.addEventListener('keyup', filterTable);
+        
+        resetButton.addEventListener('click', function() {
+            regionFilter.value = '';
+            searchInput.value = '';
+            filterTable();
+        });
+        
+        // Initial filter to count visible rows
+        filterTable();
+    });
+
+    // Export to CSV function
+    function exportTableToCSV(filename) {
+        const csv = [];
+        const rows = document.querySelectorAll('table tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            
+            for (let j = 0; j < cols.length; j++) {
+                let text = cols[j].innerText;
+                // Handle commas in text
+                text = text.replace(/"/g, '""');
+                row.push('"' + text + '"');
+            }
+            
+            csv.push(row.join(','));
+        }
+        
+        // Download CSV file
+        const csvString = csv.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+{% endblock %}

@@ -368,3 +368,347 @@ def region_rankings(request, exam_type, year, region):
     }
     
     return render(request, "region_rankings.html", context)
+
+
+
+
+
+
+
+# app/views.py
+from django.shortcuts import render
+from django.db.models import Avg, Count, Sum
+from django.core.paginator import Paginator
+from .models import ExamResult, School
+
+def psle_rankings(request, year):
+    """PSLE school rankings by average score"""
+    # Get PSLE results ordered by average score (higher is better)
+    results = ExamResult.objects.filter(
+        exam='PSLE', 
+        year=year,
+        average_score__isnull=False
+    ).select_related('school').order_by('-average_score')
+    
+    # Get unique regions for filter
+    regions = list(School.objects.filter(
+        school_type='Primary'
+    ).values_list('region', flat=True).distinct()
+    .exclude(region='Unknown').exclude(region__isnull=True).order_by('region'))
+    
+    # Add ranking position to each result
+    ranked_results = []
+    for rank, result in enumerate(results, start=1):
+        ranked_results.append({
+            'rank': rank,
+            'school': result.school,
+            'average_score': result.average_score,
+            'performance_level': result.performance_level,
+            'grade_a': result.grade_a or 0,
+            'grade_b': result.grade_b or 0,
+            'grade_c': result.grade_c or 0,
+            'grade_d': result.grade_d or 0,
+            'grade_e': result.grade_e or 0,
+            'total': result.total or 0,
+        })
+    
+    # Statistics
+    total_schools = results.count()
+    total_students = results.aggregate(total=Sum('total'))['total'] or 0
+    avg_score = results.aggregate(avg=Avg('average_score'))['avg'] or 0
+    best_score = ranked_results[0]['average_score'] if ranked_results else 0
+    
+    context = {
+        'results': ranked_results,
+        'regions': regions,
+        'year': year,
+        'exam_type': 'PSLE',
+        'total_schools': total_schools,
+        'total_students': total_students,
+        'avg_score': round(avg_score, 2),
+        'best_score': round(best_score, 2),
+    }
+    
+    return render(request, "psle_rankings.html", context)
+
+def psle_region_rankings(request, year, region):
+    """PSLE rankings by region"""
+    results = ExamResult.objects.filter(
+        exam='PSLE', 
+        year=year,
+        average_score__isnull=False,
+        school__region__iexact=region
+    ).select_related('school').order_by('-average_score')
+    
+    ranked_results = []
+    for rank, result in enumerate(results, start=1):
+        ranked_results.append({
+            'rank': rank,
+            'school': result.school,
+            'average_score': result.average_score,
+            'performance_level': result.performance_level,
+            'total': result.total or 0,
+        })
+    
+    context = {
+        'results': ranked_results,
+        'year': year,
+        'region': region,
+        'exam_type': 'PSLE',
+        'regions': School.objects.filter(school_type='Primary').values_list('region', flat=True).distinct().order_by('region'),
+    }
+    
+    return render(request, "psle_region_rankings.html", context)
+
+def psle_district_rankings(request, year, region, district):
+    """PSLE rankings by district"""
+    results = ExamResult.objects.filter(
+        exam='PSLE', 
+        year=year,
+        average_score__isnull=False,
+        school__region__iexact=region,
+        school__district__iexact=district
+    ).select_related('school').order_by('-average_score')
+    
+    ranked_results = []
+    for rank, result in enumerate(results, start=1):
+        ranked_results.append({
+            'rank': rank,
+            'school': result.school,
+            'average_score': result.average_score,
+            'performance_level': result.performance_level,
+            'total': result.total,
+        })
+    
+    context = {
+        'results': ranked_results,
+        'year': year,
+        'region': region,
+        'district': district,
+        'districts': School.objects.filter(
+            school_type='Primary', 
+            region__iexact=region
+        ).values_list('district', flat=True).distinct().order_by('district'),
+    }
+    
+    return render(request, "psle_district_rankings.html", context)
+
+def psle_council_rankings(request, year, region, district, council):
+    """PSLE rankings by council"""
+    results = ExamResult.objects.filter(
+        exam='PSLE', 
+        year=year,
+        average_score__isnull=False,
+        school__region__iexact=region,
+        school__district__iexact=district,
+        school__council__iexact=council
+    ).select_related('school').order_by('-average_score')
+    
+    ranked_results = []
+    for rank, result in enumerate(results, start=1):
+        ranked_results.append({
+            'rank': rank,
+            'school': result.school,
+            'average_score': result.average_score,
+            'performance_level': result.performance_level,
+            'total': result.total,
+        })
+    
+    context = {
+        'results': ranked_results,
+        'year': year,
+        'region': region,
+        'district': district,
+        'council': council,
+        'councils': School.objects.filter(
+            school_type='Primary', 
+            region__iexact=region,
+            district__iexact=district
+        ).values_list('council', flat=True).distinct().order_by('council'),
+    }
+    
+    return render(request, "psle_council_rankings.html", context)
+
+
+
+
+
+# app/views.py
+def psle_school_detail(request, school_id):
+    """Dedicated PSLE school detail page with subject rankings"""
+    # Get school details
+    school = get_object_or_404(School, id=school_id)
+    
+    # Get year from query parameters
+    year_str = request.GET.get('year')
+    
+    # Get all PSLE results for the school (for history table)
+    results = ExamResult.objects.filter(school=school, exam='PSLE').order_by('-year')
+    
+    # Initialize variables
+    selected_year = None
+    selected_result = None
+    latest_year = None
+    subject_performances = []
+    
+    # Parse year
+    if year_str:
+        try:
+            selected_year = int(year_str)
+        except ValueError:
+            selected_year = None
+
+    # Filter for selected_result
+    if selected_year:
+        selected_result = results.filter(year=selected_year).first()
+    
+    # Fallback if no selected_result
+    if not selected_result and results.exists():
+        selected_result = results.first()
+
+    # Get school ranking and subject performances for selected year
+    school_ranking = None
+    total_schools_in_exam = 0
+    
+    if selected_result:
+        latest_year = selected_result.year
+        
+        # Get school's ranking position for the selected year
+        ranked_schools = ExamResult.objects.filter(
+            exam='PSLE',
+            year=latest_year,
+            average_score__isnull=False
+        ).select_related('school').order_by('-average_score')
+        
+        total_schools_in_exam = ranked_schools.count()
+        
+        # Find ranking
+        ranked_list = list(ranked_schools)
+        for rank, result in enumerate(ranked_list, start=1):
+            if result.school.id == school.id:
+                school_ranking = rank
+                break
+
+        # Get subject performances for this school with rankings
+        subject_performances = get_psle_subject_rankings(selected_result, school, latest_year)
+
+    # Get performance history for charts
+    performance_history = []
+    for result in results:
+        performance_history.append({
+            'year': result.year,
+            'average_score': result.average_score,
+            'performance_level': result.performance_level,
+            'total_students': result.total,
+            'grade_a': result.grade_a or 0,
+            'grade_b': result.grade_b or 0,
+            'grade_c': result.grade_c or 0,
+            'grade_d': result.grade_d or 0,
+            'grade_e': result.grade_e or 0,
+        })
+
+    context = {
+        'school': school,
+        'results': results,
+        'selected_result': selected_result,
+        'selected_year': selected_year,
+        'latest_year': latest_year,
+        'performance_history': performance_history,
+        'subject_performances': subject_performances,
+        'school_ranking': school_ranking,
+        'total_schools_in_exam': total_schools_in_exam,
+        'exam_type': 'PSLE',
+    }
+    return render(request, "psle_school_detail.html", context)
+
+
+def get_psle_subject_rankings(exam_result, school, year):
+    """Get PSLE subject performances with national rankings"""
+    # Get this school's subject performances
+    school_subjects = SubjectPerformance.objects.filter(
+        exam_result=exam_result
+    ).order_by('subject_code')
+    
+    if not school_subjects.exists():
+        return []
+    
+    # Get all subject performances for national comparison
+    all_subject_performances = list(SubjectPerformance.objects.filter(
+        exam_result__exam='PSLE',
+        exam_result__year=year,
+        average_score__isnull=False
+    ).select_related('exam_result__school'))
+    
+    # Group by subject code
+    subject_rankings = {}
+    for subject_perf in all_subject_performances:
+        subject_code = subject_perf.subject_code
+        if subject_code not in subject_rankings:
+            subject_rankings[subject_code] = []
+        
+        subject_rankings[subject_code].append({
+            'school_id': subject_perf.exam_result.school.id,
+            'school_name': subject_perf.exam_result.school.name,
+            'average_score': subject_perf.average_score,
+            'subject_name': subject_perf.subject_name,
+            'passed': subject_perf.passed,
+            'registered': subject_perf.registered,
+            'proficiency_group': subject_perf.proficiency_group
+        })
+    
+    # Sort each subject by average_score (higher is better for PSLE)
+    for subject_code, performances in subject_rankings.items():
+        performances.sort(key=lambda x: x['average_score'], reverse=True)
+    
+    # Enhance school's subjects with rankings
+    enhanced_subject_performances = []
+    for subject in school_subjects:
+        subject_code = subject.subject_code
+        if subject_code in subject_rankings:
+            ranked_performances = subject_rankings[subject_code]
+            
+            # Find school's rank
+            school_rank = None
+            for rank, perf in enumerate(ranked_performances, 1):
+                if perf['school_id'] == school.id:
+                    school_rank = rank
+                    break
+            
+            if school_rank is not None:
+                total_schools_offering = len(ranked_performances)
+                
+                if total_schools_offering == 1:
+                    percentile = 100.0
+                    performance_label = "Only School"
+                else:
+                    percentile = ((total_schools_offering - school_rank) / total_schools_offering) * 100
+                    
+                    if school_rank == 1:
+                        performance_label = "🥇 Top"
+                    elif school_rank == 2:
+                        performance_label = "🥈 2nd"
+                    elif school_rank == 3:
+                        performance_label = "🥉 3rd"
+                    elif school_rank <= 10:
+                        performance_label = "Top 10"
+                    elif school_rank <= 50:
+                        performance_label = "Top 50"
+                    elif school_rank <= 100:
+                        performance_label = "Top 100"
+                    elif school_rank <= 500:
+                        performance_label = "Top 500"
+                    else:
+                        performance_label = f"Rank {school_rank}"
+                
+                enhanced_subject_performances.append({
+                    'subject': subject,
+                    'subject_rank': school_rank,
+                    'total_schools_offering': total_schools_offering,
+                    'percentile': round(percentile, 1),
+                    'performance_label': performance_label,
+                    'top_performer_score': ranked_performances[0]['average_score'] if ranked_performances else subject.average_score,
+                    'national_avg_score': round(sum(p['average_score'] for p in ranked_performances) / total_schools_offering, 1) if total_schools_offering > 0 else subject.average_score
+                })
+    
+    # Sort by rank (best performing subjects first)
+    return sorted(enhanced_subject_performances, key=lambda x: x['subject_rank'])

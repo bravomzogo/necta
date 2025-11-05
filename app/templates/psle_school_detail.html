@@ -1,0 +1,721 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ school.name }} - PSLE Results - NECTA Results{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* PSLE School Detail specific styles */
+    .school-header {
+        background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .performance-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+    }
+    
+    .performance-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--muted-text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .grade-distribution {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+    
+    .grade-a { background-color: #28a745; }
+    .grade-b { background-color: #17a2b8; }
+    .grade-c { background-color: #ffc107; }
+    .grade-d { background-color: #fd7e14; }
+    .grade-e { background-color: #dc3545; }
+    
+    .grade-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .grade-stat {
+        text-align: center;
+        padding: 0.5rem;
+        border-radius: 8px;
+        background: var(--secondary-bg);
+    }
+    
+    .grade-stat.a { border-left: 4px solid #28a745; }
+    .grade-stat.b { border-left: 4px solid #17a2b8; }
+    .grade-stat.c { border-left: 4px solid #ffc107; }
+    .grade-stat.d { border-left: 4px solid #fd7e14; }
+    .grade-stat.e { border-left: 4px solid #dc3545; }
+    
+    .performance-badge {
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+    }
+    
+    .performance-a { background-color: #28a745; color: white; }
+    .performance-b { background-color: #17a2b8; color: white; }
+    .performance-c { background-color: #ffc107; color: black; }
+    .performance-d { background-color: #fd7e14; color: white; }
+    .performance-e { background-color: #dc3545; color: white; }
+    
+    .history-table {
+        font-size: 0.9rem;
+    }
+    
+    .history-table th {
+        background: var(--secondary-bg);
+        color: var(--text-color);
+        font-weight: 600;
+    }
+    
+    .chart-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .school-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--secondary-bg);
+        border-radius: 8px;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: var(--muted-text);
+        margin-right: 0.5rem;
+    }
+    
+    .ranking-badge {
+        font-size: 1.2rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+    }
+
+    /* Subject Rankings Styles */
+    .subject-rank-1 { background-color: rgba(255, 215, 0, 0.1) !important; }
+    .subject-rank-2 { background-color: rgba(192, 192, 192, 0.1) !important; }
+    .subject-rank-3 { background-color: rgba(205, 127, 50, 0.1) !important; }
+    .subject-rank-top10 { background-color: rgba(35, 134, 54, 0.05) !important; }
+
+    /* Performance level colors for subjects */
+    .badge.performance-a { background-color: #28a745; color: white; }
+    .badge.performance-b { background-color: #17a2b8; color: white; }
+    .badge.performance-c { background-color: #ffc107; color: black; }
+    .badge.performance-d { background-color: #fd7e14; color: white; }
+    .badge.performance-e { background-color: #dc3545; color: white; }
+
+    /* Progress bars for subject scores */
+    .score-progress {
+        height: 6px;
+        border-radius: 3px;
+        background-color: #e9ecef;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+
+    .score-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--gradient-end));
+    }
+
+    /* Subject summary cards */
+    .subject-summary-card {
+        background: var(--secondary-bg);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Mobile responsiveness for subject table */
+    @media (max-width: 768px) {
+        .subject-table-mobile-hidden {
+            display: none;
+        }
+        
+        .subject-table .badge {
+            font-size: 0.7rem;
+        }
+
+        .school-header {
+            padding: 1.5rem 0;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+        }
+        
+        .grade-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .school-info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .performance-card {
+            padding: 1rem;
+        }
+    }
+
+    /* Dark mode adjustments */
+    body.dark-mode .performance-card,
+    body.dark-mode .chart-container {
+        background: var(--card-bg);
+        border-color: var(--border-color);
+    }
+    
+    body.dark-mode .grade-stat {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    body.dark-mode .info-item {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    body.dark-mode .subject-summary-card {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    body.dark-mode .score-progress {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- School Header -->
+<div class="school-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">{{ school.name }}</h1>
+                <p class="mb-1">
+                    <i class="fas fa-graduation-cap me-1"></i>
+                    Primary School - PSLE Results
+                </p>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-map-marker-alt me-1"></i>
+                    {{ school.region }} • {{ school.district }} • {{ school.council }}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="mt-3 mt-md-0">
+                    <span class="badge bg-light text-dark fs-6 p-2">
+                        <i class="fas fa-hashtag me-1"></i>{{ school.code }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Year Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar me-2 text-primary"></i>
+                                Select Examination Year
+                            </h5>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-select" id="yearSelect" onchange="updateYear(this.value)">
+                                {% for result in results %}
+                                <option value="{{ result.year }}" {% if result.year == latest_year %}selected{% endif %}>
+                                    PSLE {{ result.year }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Year Performance -->
+    {% if selected_result %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="performance-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="mb-3">PSLE {{ latest_year }} Performance</h3>
+                        
+                        <div class="school-info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Average Score:</span>
+                                <span class="stat-number">{{ selected_result.average_score }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Performance Level:</span>
+                                <span class="performance-badge {% if 'Daraja A' in selected_result.performance_level %}performance-a
+                                                              {% elif 'Daraja B' in selected_result.performance_level %}performance-b
+                                                              {% elif 'Daraja C' in selected_result.performance_level %}performance-c
+                                                              {% elif 'Daraja D' in selected_result.performance_level %}performance-d
+                                                              {% elif 'Daraja E' in selected_result.performance_level %}performance-e{% endif %}">
+                                    {{ selected_result.performance_level }}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total Students:</span>
+                                <span class="fs-5 fw-bold text-primary">{{ selected_result.total }}</span>
+                            </div>
+                            {% if school_ranking %}
+                            <div class="info-item">
+                                <span class="info-label">National Ranking:</span>
+                                <span class="ranking-badge {% if school_ranking == 1 %}bg-warning text-dark
+                                                         {% elif school_ranking <= 3 %}bg-secondary
+                                                         {% elif school_ranking <= 10 %}bg-primary
+                                                         {% else %}bg-dark text-light{% endif %}">
+                                    #{{ school_ranking }} of {{ total_schools_in_exam }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="stat-number text-primary">{{ selected_result.average_score }}</div>
+                        <div class="stat-label">Average Score</div>
+                        <div class="mt-3">
+                            {% if school_ranking and school_ranking <= 10 %}
+                            <i class="fas fa-trophy fa-2x text-warning"></i>
+                            <p class="mt-2 text-success">Top {{ school_ranking }} School Nationally</p>
+                            {% elif school_ranking and school_ranking <= 50 %}
+                            <i class="fas fa-medal fa-2x text-secondary"></i>
+                            <p class="mt-2 text-info">Top 50 School Nationally</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grade Distribution -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="performance-card">
+                <h4 class="mb-4">
+                    <i class="fas fa-chart-pie me-2 text-primary"></i>
+                    Grade Distribution - PSLE {{ latest_year }}
+                </h4>
+                
+                {% if selected_result.total > 0 %}
+                <div class="grade-distribution">
+                    <div class="grade-a" style="width: {% widthratio selected_result.grade_a selected_result.total 100 %}%"></div>
+                    <div class="grade-b" style="width: {% widthratio selected_result.grade_b selected_result.total 100 %}%"></div>
+                    <div class="grade-c" style="width: {% widthratio selected_result.grade_c selected_result.total 100 %}%"></div>
+                    <div class="grade-d" style="width: {% widthratio selected_result.grade_d selected_result.total 100 %}%"></div>
+                    <div class="grade-e" style="width: {% widthratio selected_result.grade_e selected_result.total 100 %}%"></div>
+                </div>
+                
+                <div class="grade-stats">
+                    <div class="grade-stat a">
+                        <div class="fw-bold text-success">Grade A</div>
+                        <div class="fs-5">{{ selected_result.grade_a }}</div>
+                        <small>{% widthratio selected_result.grade_a selected_result.total 100 %}%</small>
+                    </div>
+                    <div class="grade-stat b">
+                        <div class="fw-bold text-info">Grade B</div>
+                        <div class="fs-5">{{ selected_result.grade_b }}</div>
+                        <small>{% widthratio selected_result.grade_b selected_result.total 100 %}%</small>
+                    </div>
+                    <div class="grade-stat c">
+                        <div class="fw-bold text-warning">Grade C</div>
+                        <div class="fs-5">{{ selected_result.grade_c }}</div>
+                        <small>{% widthratio selected_result.grade_c selected_result.total 100 %}%</small>
+                    </div>
+                    <div class="grade-stat d">
+                        <div class="fw-bold text-orange">Grade D</div>
+                        <div class="fs-5">{{ selected_result.grade_d }}</div>
+                        <small>{% widthratio selected_result.grade_d selected_result.total 100 %}%</small>
+                    </div>
+                    <div class="grade-stat e">
+                        <div class="fw-bold text-danger">Grade E</div>
+                        <div class="fs-5">{{ selected_result.grade_e }}</div>
+                        <small>{% widthratio selected_result.grade_e selected_result.total 100 %}%</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                    <p>No grade distribution data available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject Performance Rankings -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="performance-card">
+                <h4 class="mb-4">
+                    <i class="fas fa-book me-2 text-primary"></i>
+                    Subject Performance Rankings - PSLE {{ latest_year }}
+                </h4>
+                
+                {% if subject_performances %}
+                <div class="table-responsive">
+                    <table class="table table-hover subject-table">
+                        <thead>
+                            <tr>
+                                <th width="80">Rank</th>
+                                <th>Subject</th>
+                                <th width="120" class="text-center">Avg Score</th>
+                                <th width="120" class="text-center subject-table-mobile-hidden">National Avg</th>
+                                <th width="120" class="text-center subject-table-mobile-hidden">Top Score</th>
+                                <th width="100" class="text-center subject-table-mobile-hidden">Students</th>
+                                <th width="120" class="text-center">Pass Rate</th>
+                                <th width="150" class="text-center">Performance</th>
+                                <th width="100" class="text-center subject-table-mobile-hidden">Percentile</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subj_perf in subject_performances %}
+                            <tr class="{% if subj_perf.subject_rank == 1 %}subject-rank-1
+                                      {% elif subj_perf.subject_rank == 2 %}subject-rank-2
+                                      {% elif subj_perf.subject_rank == 3 %}subject-rank-3
+                                      {% elif subj_perf.subject_rank <= 10 %}subject-rank-top10{% endif %}">
+                                <td class="text-center">
+                                    <span class="badge {% if subj_perf.subject_rank == 1 %}bg-warning text-dark
+                                                     {% elif subj_perf.subject_rank <= 3 %}bg-secondary
+                                                     {% elif subj_perf.subject_rank <= 10 %}bg-primary
+                                                     {% else %}bg-dark text-light{% endif %}">
+                                        {{ subj_perf.subject_rank }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong>{{ subj_perf.subject.subject_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ subj_perf.subject.subject_code }}</small>
+                                    <div class="d-block d-md-none mt-1">
+                                        <small>
+                                            National: {{ subj_perf.national_avg_score }} | 
+                                            Top: {{ subj_perf.top_performer_score }} |
+                                            Students: {{ subj_perf.subject.registered }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-bold text-primary fs-6">
+                                        {{ subj_perf.subject.average_score|default:"-" }}
+                                    </span>
+                                    <div class="score-progress">
+                                        <div class="score-progress-bar" style="width: {{ subj_perf.subject.average_score }}%"></div>
+                                    </div>
+                                </td>
+                                <td class="text-center subject-table-mobile-hidden">
+                                    <span class="text-muted">{{ subj_perf.national_avg_score }}</span>
+                                </td>
+                                <td class="text-center subject-table-mobile-hidden">
+                                    <span class="text-success">{{ subj_perf.top_performer_score }}</span>
+                                </td>
+                                <td class="text-center subject-table-mobile-hidden">
+                                    {{ subj_perf.subject.registered }}
+                                </td>
+                                <td class="text-center">
+                                    {% if subj_perf.subject.registered > 0 %}
+                                    {% with pass_rate=subj_perf.subject.passed|divisibleby:subj_perf.subject.registered %}
+                                    <span class="fw-bold {% if pass_rate >= 0.8 %}text-success
+                                                       {% elif pass_rate >= 0.6 %}text-warning
+                                                       {% else %}text-danger{% endif %}">
+                                        {% widthratio subj_perf.subject.passed subj_perf.subject.registered 100 %}%
+                                    </span>
+                                    {% endwith %}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge {% if subj_perf.subject_rank == 1 %}performance-a
+                                                     {% elif subj_perf.subject_rank <= 3 %}performance-b
+                                                     {% elif subj_perf.subject_rank <= 10 %}performance-c
+                                                     {% elif subj_perf.subject_rank <= 50 %}performance-d
+                                                     {% else %}performance-e{% endif %}">
+                                        {{ subj_perf.performance_label }}
+                                    </span>
+                                </td>
+                                <td class="text-center subject-table-mobile-hidden">
+                                    <span class="fw-bold {% if subj_perf.percentile >= 90 %}text-success
+                                                       {% elif subj_perf.percentile >= 75 %}text-primary
+                                                       {% elif subj_perf.percentile >= 50 %}text-warning
+                                                       {% else %}text-danger{% endif %}">
+                                        {{ subj_perf.percentile }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Subject Performance Summary -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="subject-summary-card">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-chart-bar me-2 text-primary"></i>
+                                Subject Performance Summary
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="text-success">
+                                        <div class="fs-4 fw-bold">
+                                            {{ subject_performances|length }}
+                                        </div>
+                                        <small>Subjects</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-primary">
+                                        <div class="fs-4 fw-bold">
+                                            {{ subject_performances|length }}
+                                        </div>
+                                        <small>Offered</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-info">
+                                        <div class="fs-4 fw-bold">
+                                            {% with top_100_count=0 %}
+                                                {% for subj_perf in subject_performances %}
+                                                    {% if subj_perf.subject_rank <= 100 %}
+                                                        {% with top_100_count=top_100_count|add:1 %}{% endwith %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {{ top_100_count }}
+                                            {% endwith %}
+                                        </div>
+                                        <small>Top 100</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="subject-summary-card">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-trophy me-2 text-warning"></i>
+                                Best Performing Subjects
+                            </h6>
+                            {% for subj_perf in subject_performances %}
+                                {% if forloop.counter <= 3 %}
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold">{{ subj_perf.subject.subject_name }}</span>
+                                    <span class="badge bg-success">#{{ subj_perf.subject_rank }}</span>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-book fa-3x mb-3"></i>
+                    <p>No subject performance data available for PSLE {{ latest_year }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Performance History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="performance-card">
+                <h4 class="mb-4">
+                    <i class="fas fa-chart-line me-2 text-primary"></i>
+                    Performance History
+                </h4>
+                
+                {% if performance_history %}
+                <div class="chart-container mb-4">
+                    <canvas id="performanceChart" height="100"></canvas>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover history-table">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Average Score</th>
+                                <th>Performance Level</th>
+                                <th>Total Students</th>
+                                <th>Grade A</th>
+                                <th>Grade B</th>
+                                <th>Grade C</th>
+                                <th>Grade D</th>
+                                <th>Grade E</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for history in performance_history %}
+                            <tr>
+                                <td>
+                                    <a href="?year={{ history.year }}" class="text-decoration-none">
+                                        <strong>{{ history.year }}</strong>
+                                    </a>
+                                </td>
+                                <td class="fw-bold text-primary">{{ history.average_score }}</td>
+                                <td>
+                                    <span class="badge {% if 'Daraja A' in history.performance_level %}performance-a
+                                                     {% elif 'Daraja B' in history.performance_level %}performance-b
+                                                     {% elif 'Daraja C' in history.performance_level %}performance-c
+                                                     {% elif 'Daraja D' in history.performance_level %}performance-d
+                                                     {% elif 'Daraja E' in history.performance_level %}performance-e{% endif %}">
+                                        {{ history.performance_level }}
+                                    </span>
+                                </td>
+                                <td>{{ history.total_students }}</td>
+                                <td class="text-success">{{ history.grade_a }}</td>
+                                <td class="text-info">{{ history.grade_b }}</td>
+                                <td class="text-warning">{{ history.grade_c }}</td>
+                                <td class="text-orange">{{ history.grade_d }}</td>
+                                <td class="text-danger">{{ history.grade_e }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-history fa-3x mb-3"></i>
+                    <p>No historical PSLE data available for this school</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Back to Rankings -->
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'psle_rankings' latest_year %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Back to PSLE {{ latest_year }} Rankings
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Year selection
+    function updateYear(year) {
+        window.location.href = `?year=${year}`;
+    }
+
+    // Performance Chart
+    document.addEventListener('DOMContentLoaded', function() {
+        const performanceHistory = {{ performance_history|safe }};
+        
+        if (performanceHistory.length > 0) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const years = performanceHistory.map(h => h.year);
+            const scores = performanceHistory.map(h => h.average_score);
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Average Score',
+                        data: scores,
+                        borderColor: '#238636',
+                        backgroundColor: 'rgba(35, 134, 54, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Average Score Trend Over Years',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Average Score'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
