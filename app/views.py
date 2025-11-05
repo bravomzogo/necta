@@ -381,6 +381,7 @@ from django.db.models import Avg, Count, Sum
 from django.core.paginator import Paginator
 from .models import ExamResult, School
 
+# app/views.py
 def psle_rankings(request, year):
     """PSLE school rankings by average score"""
     # Get PSLE results ordered by average score (higher is better)
@@ -395,6 +396,12 @@ def psle_rankings(request, year):
         school_type='Primary'
     ).values_list('region', flat=True).distinct()
     .exclude(region='Unknown').exclude(region__isnull=True).order_by('region'))
+    
+    # Get unique districts for filter
+    districts = list(School.objects.filter(
+        school_type='Primary'
+    ).values_list('district', flat=True).distinct()
+    .exclude(district='Unknown').exclude(district__isnull=True).order_by('district'))
     
     # Add ranking position to each result
     ranked_results = []
@@ -421,6 +428,7 @@ def psle_rankings(request, year):
     context = {
         'results': ranked_results,
         'regions': regions,
+        'districts': districts,
         'year': year,
         'exam_type': 'PSLE',
         'total_schools': total_schools,

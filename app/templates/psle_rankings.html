@@ -135,6 +135,17 @@
     .grade-d { background-color: #fd7e14; }
     .grade-e { background-color: #dc3545; }
 
+    /* School code styling */
+    .school-code {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: var(--accent);
+        background-color: rgba(35, 134, 54, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid rgba(35, 134, 54, 0.2);
+    }
+
     /* Dark mode adjustments */
     body.dark-mode .ranking-table td {
         color: #e9ecef;
@@ -200,9 +211,9 @@
             flex-direction: column;
         }
         
+        .filter-card .col-md-3,
         .filter-card .col-md-4,
-        .filter-card .col-md-5,
-        .filter-card .col-md-3 {
+        .filter-card .col-md-5 {
             width: 100%;
             margin-bottom: 1rem;
         }
@@ -231,7 +242,7 @@
 <!-- Filter Section -->
 <div class="filter-card">
     <div class="row">
-        <div class="col-md-4 mb-2">
+        <div class="col-md-3 mb-2">
             <label class="form-label">Filter by Region</label>
             <select class="form-select" id="regionFilter">
                 <option value="">All Regions</option>
@@ -240,7 +251,16 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-5 mb-2">
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Filter by District</label>
+            <select class="form-select" id="districtFilter">
+                <option value="">All Districts</option>
+                {% for district in districts %}
+                <option value="{{ district }}">{{ district }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 mb-2">
             <label class="form-label">Search Schools</label>
             <div class="input-group">
                 <span class="input-group-text" style="background-color: var(--secondary-bg); color: var(--text-color);">
@@ -249,9 +269,9 @@
                 <input type="text" id="searchInput" class="form-control" placeholder="Search by school name or code...">
             </div>
         </div>
-        <div class="col-md-3 mb-2 d-flex align-items-end">
+        <div class="col-md-2 mb-2 d-flex align-items-end">
             <button class="btn btn-outline-secondary w-100" id="resetFilters">
-                <i class="fas fa-refresh me-1"></i>Reset Filters
+                <i class="fas fa-refresh me-1"></i>Reset
             </button>
         </div>
     </div>
@@ -303,7 +323,7 @@
                 <thead>
                     <tr>
                         <th width="80">Rank</th>
-                        <th width="100">School Code</th>
+                        <th width="120">School Code</th>
                         <th>School Name</th>
                         <th width="120" class="mobile-hidden">Region</th>
                         <th width="120" class="mobile-hidden">District</th>
@@ -321,16 +341,22 @@
                                 {{ result.rank }}
                             </span>
                         </td>
-                        <td><strong>{{ result.school.code }}</strong></td>
                         <td>
-    <a href="{% url 'psle_school_detail' result.school.id %}?year={{ year }}" class="text-decoration-none">
-        {{ result.school.name }}
-    </a>
-</td>
+                            <span class="school-code">
+                                {{ result.school.code }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'psle_school_detail' result.school.id %}?year={{ year }}" class="text-decoration-none">
+                                {{ result.school.name }}
+                            </a>
+                        </td>
                         <td class="mobile-hidden">
                             <span class="badge" style="background: var(--accent); color: #000;">{{ result.school.region }}</span>
                         </td>
-                        <td class="mobile-hidden">{{ result.school.district|default:"-" }}</td>
+                        <td class="mobile-hidden">
+                            <span class="badge bg-secondary">{{ result.school.district|default:"-" }}</span>
+                        </td>
                         <td class="score-cell">{{ result.average_score }}</td>
                         <td>
                             {% if "Daraja A" in result.performance_level %}
@@ -396,6 +422,7 @@
     // Filter functionality
     document.addEventListener('DOMContentLoaded', function() {
         const regionFilter = document.getElementById('regionFilter');
+        const districtFilter = document.getElementById('districtFilter');
         const searchInput = document.getElementById('searchInput');
         const resetButton = document.getElementById('resetFilters');
         const rows = document.querySelectorAll('.ranking-table tbody tr');
@@ -404,6 +431,7 @@
         
         function filterTable() {
             const regionValue = regionFilter.value.trim();
+            const districtValue = districtFilter.value.trim();
             const searchValue = searchInput.value.toLowerCase().trim();
             let visibleRows = 0;
             
@@ -415,14 +443,20 @@
                 const regionCell = row.cells[3];
                 const region = regionCell ? regionCell.textContent.trim() : '';
                 
-                // Check matches - case insensitive for region
+                // Get district text from the badge element
+                const districtCell = row.cells[4];
+                const district = districtCell ? districtCell.textContent.trim() : '';
+                
+                // Check matches - case insensitive for region and district
                 const matchesRegion = regionValue === '' || 
                                     region.toLowerCase() === regionValue.toLowerCase();
+                const matchesDistrict = districtValue === '' || 
+                                      district === districtValue;
                 const matchesSearch = searchValue === '' || 
                                     schoolName.includes(searchValue) || 
                                     schoolCode.includes(searchValue);
                 
-                if (matchesRegion && matchesSearch) {
+                if (matchesRegion && matchesDistrict && matchesSearch) {
                     row.style.display = '';
                     visibleRows++;
                 } else {
@@ -442,10 +476,12 @@
         }
         
         regionFilter.addEventListener('change', filterTable);
+        districtFilter.addEventListener('change', filterTable);
         searchInput.addEventListener('keyup', filterTable);
         
         resetButton.addEventListener('click', function() {
             regionFilter.value = '';
+            districtFilter.value = '';
             searchInput.value = '';
             filterTable();
         });

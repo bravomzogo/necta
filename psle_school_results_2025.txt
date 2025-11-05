@@ -2,12 +2,33 @@ PSLE 2025 - School Rankings by Average Score
 ====================================================================================================
 Rank. School Code School Name - Region - District - Council - Average Score - Performance Level
 ====================================================================================================
-1. ARUSHA VICTORY PRIMARY SCHOOL - PS0101128 - ARUSHA - ARUSHA - Unknown - Average: 268.2941 - Daraja A (BORA)
+1. PS0101128 ARUSHA VICTORY PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 268.2941 - Daraja A (BORA)
  Grades: A:17 B:0 C:0 D:0 E:0 Total:17
 
-2. ASSALAF ISLAMIC PRIMARY SCHOOL - PS0101116 - ARUSHA - ARUSHA - Unknown - Average: 237.2553 - Daraja B (NZURI SANA)
+2. PS0101161 BETHANY PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 267.4318 - Daraja A (BORA)
+ Grades: A:39 B:5 C:0 D:0 E:0 Total:44
+
+3. PS0101154 BLUE BELL PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 256.8936 - Daraja A (BORA)
+ Grades: A:37 B:10 C:0 D:0 E:0 Total:47
+
+4. PS0101135 DINKA PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 246.4444 - Daraja A (BORA)
+ Grades: A:6 B:3 C:0 D:0 E:0 Total:9
+
+5. PS0101143 DEANERY PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 240.4833 - Daraja B (NZURI SANA)
+ Grades: A:36 B:21 C:3 D:0 E:0 Total:60
+
+6. PS0101116 ASSALAF ISLAMIC PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 237.2553 - Daraja B (NZURI SANA)
  Grades: A:23 B:24 C:0 D:0 E:0 Total:47
 
-3. ALBEHIJE PRIMARY SCHOOL - PS0101114 - ARUSHA - ARUSHA - Unknown - Average: 226.4615 - Daraja B (NZURI SANA)
+7. PS0101114 ALBEHIJE PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 226.4615 - Daraja B (NZURI SANA)
  Grades: A:6 B:6 C:1 D:0 E:0 Total:13
+
+8. PS0101001 BANGATA PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 174.2742 - Daraja C (NZURI)
+ Grades: A:3 B:25 C:29 D:3 E:2 Total:62
+
+9. PS0101173 CLEVER KIDS PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 172.3333 - Daraja C (NZURI)
+ Grades: A:0 B:1 C:2 D:0 E:0 Total:3
+
+10. PS0101003 BWAWANI PRIMARY SCHOOL - ARUSHA - ARUSHA - Unknown - Average: 153.0444 - Daraja C (NZURI)
+ Grades: A:0 B:7 C:29 D:9 E:0 Total:45
 

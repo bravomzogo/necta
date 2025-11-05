@@ -1,3 +1,4 @@
+# management/commands/scrape_necta.py
 import requests
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand, CommandError
@@ -14,7 +15,6 @@ from django.db.models import Avg, Count
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE_URL = "https://matokeo.necta.go.tz/results/"
-
 
 class Command(BaseCommand):
     help = "Scrape NECTA results for PSLE, CSEE or ACSEE and rank schools"
@@ -429,18 +429,25 @@ class Command(BaseCommand):
         """Process an individual school page and return 1 if successful"""
         school_url = link_info['url']
         school_text = link_info['text']
-        parts = school_text.split(maxsplit=1)
-        if len(parts) < 2:
+        
+        # FIXED: Properly parse school name and code from text like "ALBEHIJE PRIMARY SCHOOL - PS0101114"
+        if ' - ' in school_text:
+            # Split by " - " to separate name from code
+            name_part, code_part = school_text.split(' - ', 1)
+            name = name_part.strip()
+            code = code_part.strip()
+        else:
+            # Fallback: try to extract code from URL
             code = os.path.splitext(os.path.basename(link_info['href']))[0].upper()
             name = school_text
-        else:
-            code, name = parts[0], parts[1]
+        
         try:
             sresp = session.get(school_url, timeout=30)
             sresp.raise_for_status()
         except Exception as e:
             self.stdout.write(self.style.WARNING(f"Failed to fetch {school_url}: {e}"))
             return 0
+        
         ssoup = BeautifulSoup(sresp.text, "html.parser")
 
         # Use passed region/district first
@@ -472,23 +479,27 @@ class Command(BaseCommand):
             return 0
 
         self.stdout.write(f" → {code} {name}")
-        self.stdout.write(f" Region: {location['region']}, District: {location['district']}")
-        self.stdout.write(f" Grades - A: {grade_counts['A']}, B: {grade_counts['B']}, C: {grade_counts['C']}, D: {grade_counts['D']}, E: {grade_counts['E']}")
-        self.stdout.write(f" Total: {total}, Average: {average_score}, Level: {performance_level}")
-        self.stdout.write(f" Subjects: {len(subjects)}, Students: {len(students)}")
+        self.stdout.write(f"   Region: {location['region']}, District: {location['district']}")
+        self.stdout.write(f"   Grades - A: {grade_counts['A']}, B: {grade_counts['B']}, C: {grade_counts['C']}, D: {grade_counts['D']}, E: {grade_counts['E']}")
+        self.stdout.write(f"   Total: {total}, Average: {average_score}, Level: {performance_level}")
+        self.stdout.write(f"   Subjects: {len(subjects)}, Students: {len(students)}")
+        
         if verbose and subjects:
             self.print_subject_data(name, subjects)
 
-        school, _ = School.objects.get_or_create(
-            code=code,
+        # Create or update school with proper name and code
+        school, created = School.objects.get_or_create(
+            code=code,  # This will be "PS0101114"
             defaults={
-                "name": name,
+                "name": name,  # This will be "ALBEHIJE PRIMARY SCHOOL"
                 "region": location['region'],
                 "district": location['district'],
                 "council": location['council'],
                 "school_type": "Primary"
             }
         )
+        
+        # Update school if location information improved
         update_fields = {}
         if school.region == "Unknown" and location['region'] != "Unknown":
             update_fields['region'] = location['region']
@@ -496,10 +507,11 @@ class Command(BaseCommand):
             update_fields['district'] = location['district']
         if school.council == "Unknown" and location['council'] != "Unknown":
             update_fields['council'] = location['council']
+        
         if update_fields:
             for field, value in update_fields.items():
                 setattr(school, field, value)
-            school.save(update_fields=update_fields.keys())
+            school.save()
 
         if exam == "psle":
             exam_result, created = ExamResult.objects.update_or_create(
@@ -518,6 +530,7 @@ class Command(BaseCommand):
                     "total": total,
                 },
             )
+            
             for subject_data in subjects:
                 SubjectPerformance.objects.update_or_create(
                     exam_result=exam_result,
@@ -534,6 +547,7 @@ class Command(BaseCommand):
                         'proficiency_group': subject_data.get('PROFICIENCY GROUP', ''),
                     }
                 )
+            
             for student_data in students:
                 StudentResult.objects.update_or_create(
                     exam_result=exam_result,
@@ -545,6 +559,7 @@ class Command(BaseCommand):
                         "average_grade": student_data['AVERAGE_GRADE'],
                     }
                 )
+            
             all_results.append({
                 "code": code,
                 "name": name,
@@ -560,6 +575,7 @@ class Command(BaseCommand):
                 "grade_e": grade_counts["E"],
                 "total": total,
             })
+        
         return 1
 
     def handle(self, *args, **options):
