@@ -381,7 +381,8 @@ from django.db.models import Avg, Count, Sum
 from django.core.paginator import Paginator
 from .models import ExamResult, School
 
-# app/views.py
+from django.core.paginator import Paginator
+
 def psle_rankings(request, year):
     """PSLE school rankings by average score"""
     # Get PSLE results ordered by average score (higher is better)
@@ -419,14 +420,20 @@ def psle_rankings(request, year):
             'total': result.total or 0,
         })
     
-    # Statistics
+    # Pagination - 100 schools per page
+    paginator = Paginator(ranked_results, 100)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Statistics (calculate from all results, not just current page)
     total_schools = results.count()
     total_students = results.aggregate(total=Sum('total'))['total'] or 0
     avg_score = results.aggregate(avg=Avg('average_score'))['avg'] or 0
     best_score = ranked_results[0]['average_score'] if ranked_results else 0
     
     context = {
-        'results': ranked_results,
+        'page_obj': page_obj,  # Changed from 'results'
+        'results': page_obj,   # Keep for compatibility
         'regions': regions,
         'districts': districts,
         'year': year,

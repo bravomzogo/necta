@@ -243,14 +243,16 @@
 <div class="filter-card">
     <div class="row">
         <div class="col-md-3 mb-2">
-            <label class="form-label">Filter by Region</label>
-            <select class="form-select" id="regionFilter">
-                <option value="">All Regions</option>
-                {% for region in regions %}
-                <option value="{{ region }}">{{ region }}</option>
-                {% endfor %}
-            </select>
-        </div>
+    <label class="form-label">Filter by Region</label>
+    <select class="form-select" id="regionFilter">
+        <option value="">All Regions</option>
+        {% for region in regions %}
+            {% if region == region.upper %}
+            <option value="{{ region }}">{{ region }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+</div>
         <div class="col-md-3 mb-2">
             <label class="form-label">Filter by District</label>
             <select class="form-select" id="districtFilter">
@@ -302,7 +304,10 @@
     <div class="mb-2 mb-md-0">
         <span class="text-muted">
             <i class="fas fa-info-circle me-1"></i>
-            Showing <strong id="visibleCount">{{ results|length }}</strong> of {{ results|length }} schools
+            Showing <strong id="visibleCount">{{ page_obj|length }}</strong> of {{ page_obj.paginator.count }} schools
+            {% if page_obj.paginator.num_pages > 1 %}
+            (Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }})
+            {% endif %}
         </span>
     </div>
     <div class="d-flex flex-wrap gap-2">
@@ -334,7 +339,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for result in results %}
+                    {% for result in page_obj %}
                     <tr class="{% if result.rank <= 10 %}top-school{% endif %}">
                         <td>
                             <span class="badge {% if result.rank == 1 %}bg-warning text-dark{% elif result.rank <= 3 %}bg-secondary{% elif result.rank <= 10 %}bg-primary{% else %}bg-dark text-light{% endif %}">
@@ -411,6 +416,72 @@
     </div>
 </div>
 
+<!-- Pagination -->
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="School rankings pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;&laquo;</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;</span>
+            </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;&raquo;</span>
+            </li>
+        {% endif %}
+    </ul>
+    
+    <div class="text-center text-muted mt-2">
+        <small>
+            Showing schools {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+            (Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }})
+        </small>
+    </div>
+</nav>
+{% endif %}
+
 <!-- No results message -->
 <div class="alert alert-warning d-none mt-3" id="noResultsMessage">
     <i class="fas fa-exclamation-triangle me-2"></i>No schools match your current filters.
@@ -419,76 +490,48 @@
 
 {% block extra_js %}
 <script>
-    // Filter functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const regionFilter = document.getElementById('regionFilter');
-        const districtFilter = document.getElementById('districtFilter');
-        const searchInput = document.getElementById('searchInput');
-        const resetButton = document.getElementById('resetFilters');
-        const rows = document.querySelectorAll('.ranking-table tbody tr');
-        const noResultsMessage = document.getElementById('noResultsMessage');
-        const visibleCount = document.getElementById('visibleCount');
+    // Simplified filtering for current page only
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const rows = document.querySelectorAll('.ranking-table tbody tr');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    const visibleCount = document.getElementById('visibleCount');
+    
+    function filterCurrentPage() {
+        const searchValue = searchInput.value.toLowerCase().trim();
+        let visibleRows = 0;
         
-        function filterTable() {
-            const regionValue = regionFilter.value.trim();
-            const districtValue = districtFilter.value.trim();
-            const searchValue = searchInput.value.toLowerCase().trim();
-            let visibleRows = 0;
+        rows.forEach(row => {
+            const schoolName = row.cells[2].textContent.toLowerCase().trim();
+            const schoolCode = row.cells[1].textContent.toLowerCase().trim();
             
-            rows.forEach(row => {
-                const schoolName = row.cells[2].textContent.toLowerCase().trim();
-                const schoolCode = row.cells[1].textContent.toLowerCase().trim();
-                
-                // Get region text from the badge element
-                const regionCell = row.cells[3];
-                const region = regionCell ? regionCell.textContent.trim() : '';
-                
-                // Get district text from the badge element
-                const districtCell = row.cells[4];
-                const district = districtCell ? districtCell.textContent.trim() : '';
-                
-                // Check matches - case insensitive for region and district
-                const matchesRegion = regionValue === '' || 
-                                    region.toLowerCase() === regionValue.toLowerCase();
-                const matchesDistrict = districtValue === '' || 
-                                      district === districtValue;
-                const matchesSearch = searchValue === '' || 
-                                    schoolName.includes(searchValue) || 
-                                    schoolCode.includes(searchValue);
-                
-                if (matchesRegion && matchesDistrict && matchesSearch) {
-                    row.style.display = '';
-                    visibleRows++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+            const matchesSearch = searchValue === '' || 
+                                schoolName.includes(searchValue) || 
+                                schoolCode.includes(searchValue);
             
-            // Update visible count
-            visibleCount.textContent = visibleRows;
-            
-            // Show/hide no results message
-            if (visibleRows === 0) {
-                noResultsMessage.classList.remove('d-none');
+            if (matchesSearch) {
+                row.style.display = '';
+                visibleRows++;
             } else {
-                noResultsMessage.classList.add('d-none');
+                row.style.display = 'none';
             }
-        }
-        
-        regionFilter.addEventListener('change', filterTable);
-        districtFilter.addEventListener('change', filterTable);
-        searchInput.addEventListener('keyup', filterTable);
-        
-        resetButton.addEventListener('click', function() {
-            regionFilter.value = '';
-            districtFilter.value = '';
-            searchInput.value = '';
-            filterTable();
         });
         
-        // Initial filter to count visible rows
-        filterTable();
-    });
+        // Update visible count for current page only
+        visibleCount.textContent = visibleRows;
+        
+        if (visibleRows === 0) {
+            noResultsMessage.classList.remove('d-none');
+        } else {
+            noResultsMessage.classList.add('d-none');
+        }
+    }
+    
+    searchInput.addEventListener('keyup', filterCurrentPage);
+    
+    // Initial filter to count visible rows
+    filterCurrentPage();
+});
 
     // Export to CSV function
     function exportTableToCSV(filename) {

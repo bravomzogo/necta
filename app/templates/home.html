@@ -489,7 +489,8 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="card-body">
                 <div class="row g-2">
-                    {% for region in regions|slice:":12" %}
+                    {% for region in regions|slice:":21" %}
+                    {% if region == region.upper %}
                     <div class="col-md-6 mb-2">
                         <a href="{% url 'region_rankings' 'ACSEE' 2023 region %}" class="region-card text-decoration-none">
                             <div class="d-flex align-items-center p-3 rounded">
@@ -503,6 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </a>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
