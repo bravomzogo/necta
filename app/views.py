@@ -382,6 +382,7 @@ from django.core.paginator import Paginator
 from .models import ExamResult, School
 
 from django.core.paginator import Paginator
+from django.db.models import Q
 
 def psle_rankings(request, year):
     """PSLE school rankings by average score"""
@@ -392,7 +393,27 @@ def psle_rankings(request, year):
         average_score__isnull=False
     ).select_related('school').order_by('-average_score')
     
-    # Get unique regions for filter
+    # Apply filters from request
+    region_filter = request.GET.get('region', '')
+    district_filter = request.GET.get('district', '')
+    search_filter = request.GET.get('search', '')
+    
+    # Check if any filters are active
+    filters_active = any([region_filter, district_filter, search_filter])
+    
+    if region_filter:
+        results = results.filter(school__region__iexact=region_filter)
+    
+    if district_filter:
+        results = results.filter(school__district__iexact=district_filter)
+    
+    if search_filter:
+        results = results.filter(
+            Q(school__name__icontains=search_filter) |
+            Q(school__code__icontains=search_filter)
+        )
+    
+    # Get unique regions for filter (from all data, not filtered)
     all_regions = list(School.objects.filter(
         school_type='Primary'
     ).values_list('region', flat=True).distinct()
@@ -401,17 +422,24 @@ def psle_rankings(request, year):
     # Filter regions to only show uppercase (no duplicates)
     regions = [region for region in all_regions if region == region.upper()]
     
-    # Get unique districts for filter
-    districts = list(School.objects.filter(
-        school_type='Primary'
-    ).values_list('district', flat=True).distinct()
-    .exclude(district='Unknown').exclude(district__isnull=True).order_by('district'))
+    # Get unique districts for filter (based on selected region if any)
+    if region_filter:
+        districts = list(School.objects.filter(
+            school_type='Primary',
+            region__iexact=region_filter
+        ).values_list('district', flat=True).distinct()
+        .exclude(district='Unknown').exclude(district__isnull=True).order_by('district'))
+    else:
+        districts = list(School.objects.filter(
+            school_type='Primary'
+        ).values_list('district', flat=True).distinct()
+        .exclude(district='Unknown').exclude(district__isnull=True).order_by('district'))
     
-    # Add ranking position to each result
+    # Add ranking position to each result - re-rank based on filters
     ranked_results = []
     for rank, result in enumerate(results, start=1):
         ranked_results.append({
-            'rank': rank,
+            'rank': rank,  # This will be the actual rank based on filtered results
             'school': result.school,
             'average_score': result.average_score,
             'performance_level': result.performance_level,
@@ -423,28 +451,50 @@ def psle_rankings(request, year):
             'total': result.total or 0,
         })
     
-    # Pagination - 100 schools per page
-    paginator = Paginator(ranked_results, 100)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Only use pagination when no filters are active
+    if not filters_active:
+        # Pagination - 100 schools per page (only when no filters)
+        paginator = Paginator(ranked_results, 100)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        results_to_display = page_obj
+        total_filtered_schools = len(ranked_results)
+        show_pagination = True
+    else:
+        # Show all results when filters are active
+        page_obj = None
+        results_to_display = ranked_results
+        total_filtered_schools = len(ranked_results)
+        show_pagination = False
     
-    # Statistics (calculate from all results)
-    total_schools = results.count()
+    # Statistics (calculate from all results for total, filtered for filtered stats)
+    total_schools = ExamResult.objects.filter(
+        exam='PSLE', 
+        year=year,
+        average_score__isnull=False
+    ).count()
+    
     total_students = results.aggregate(total=Sum('total'))['total'] or 0
     avg_score = results.aggregate(avg=Avg('average_score'))['avg'] or 0
     best_score = ranked_results[0]['average_score'] if ranked_results else 0
     
     context = {
         'page_obj': page_obj,
-        'results': page_obj,
+        'results': results_to_display,
         'regions': regions,
         'districts': districts,
         'year': year,
         'exam_type': 'PSLE',
         'total_schools': total_schools,
+        'total_filtered_schools': total_filtered_schools,
         'total_students': total_students,
         'avg_score': round(avg_score, 2),
         'best_score': round(best_score, 2),
+        'current_region': region_filter,
+        'current_district': district_filter,
+        'current_search': search_filter,
+        'filters_active': filters_active,
+        'show_pagination': show_pagination,
     }
     
     return render(request, "psle_rankings.html", context)

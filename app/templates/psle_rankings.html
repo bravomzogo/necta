@@ -169,6 +169,15 @@
         font-weight: bold;
     }
 
+    .filter-mode-indicator {
+        background: linear-gradient(135deg, var(--accent), var(--gradient-end));
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+
     /* Dark mode adjustments */
     body.dark-mode .ranking-table td {
         color: #e9ecef;
@@ -258,9 +267,28 @@
         <p class="text-muted mb-0">Primary School Leaving Examination Results - Higher average scores are better</p>
         
         <!-- Active Filters Display -->
-        <div id="activeFilters" class="mt-2 d-none">
+        <div id="activeFilters" class="mt-2 {% if not filters_active %}d-none{% endif %}">
             <small class="text-muted">Active filters:</small>
-            <div id="filterIndicators"></div>
+            <div id="filterIndicators">
+                {% if current_region %}
+                <span class="filter-indicator">
+                    Region: {{ current_region }}
+                    <span class="remove" onclick="removeFilter('region')">×</span>
+                </span>
+                {% endif %}
+                {% if current_district %}
+                <span class="filter-indicator">
+                    District: {{ current_district }}
+                    <span class="remove" onclick="removeFilter('district')">×</span>
+                </span>
+                {% endif %}
+                {% if current_search %}
+                <span class="filter-indicator">
+                    Search: "{{ current_search }}"
+                    <span class="remove" onclick="removeFilter('search')">×</span>
+                </span>
+                {% endif %}
+            </div>
         </div>
     </div>
     <a href="{% url 'home' %}" class="btn btn-outline-primary">
@@ -268,49 +296,78 @@
     </a>
 </div>
 
+<!-- Filter Mode Indicator -->
+{% if filters_active %}
+<div class="filter-mode-indicator">
+    <i class="fas fa-filter me-2"></i>
+    Showing filtered results: {{ total_filtered_schools }} schools 
+    {% if current_region %}in {{ current_region }}{% endif %}
+    {% if current_district %} > {{ current_district }}{% endif %}
+    {% if current_search %}matching "{{ current_search }}"{% endif %}
+</div>
+{% endif %}
+
 <!-- Filter Section -->
 <div class="filter-card">
-    <div class="row">
-        <div class="col-md-3 mb-2">
-            <label class="form-label">Filter by Region</label>
-            <select class="form-select" id="regionFilter">
-                <option value="">All Regions</option>
-                {% for region in regions %}
-                <option value="{{ region }}">{{ region }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3 mb-2">
-            <label class="form-label">Filter by District</label>
-            <select class="form-select" id="districtFilter">
-                <option value="">All Districts</option>
-                {% for district in districts %}
-                <option value="{{ district }}">{{ district }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4 mb-2">
-            <label class="form-label">Search Schools</label>
-            <div class="input-group">
-                <span class="input-group-text" style="background-color: var(--secondary-bg); color: var(--text-color);">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by school name or code...">
+    <form method="get" id="filterForm">
+        <input type="hidden" name="page" value="1">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <label class="form-label">Filter by Region</label>
+                <select class="form-select" name="region" id="regionFilter">
+                    <option value="">All Regions</option>
+                    {% for region in regions %}
+                    <option value="{{ region }}" {% if current_region == region %}selected{% endif %}>{{ region }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 mb-2">
+                <label class="form-label">Filter by District</label>
+                <select class="form-select" name="district" id="districtFilter">
+                    <option value="">All Districts</option>
+                    {% for district in districts %}
+                    <option value="{{ district }}" {% if current_district == district %}selected{% endif %}>{{ district }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label class="form-label">Search Schools</label>
+                <div class="input-group">
+                    <span class="input-group-text" style="background-color: var(--secondary-bg); color: var(--text-color);">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="search" id="searchInput" class="form-control" 
+                           placeholder="Search by school name or code..." 
+                           value="{{ current_search }}">
+                </div>
+            </div>
+            <div class="col-md-2 mb-2 d-flex align-items-end">
+                <div class="d-flex gap-2 w-100">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="fas fa-filter me-1"></i>Apply
+                    </button>
+                    <a href="?page=1" class="btn btn-outline-secondary">
+                        <i class="fas fa-refresh"></i>
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="col-md-2 mb-2 d-flex align-items-end">
-            <button type="button" class="btn btn-outline-secondary w-100" id="resetFilters">
-                <i class="fas fa-refresh me-1"></i>Reset
-            </button>
-        </div>
-    </div>
+    </form>
 </div>
 
 <!-- Statistics Cards -->
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-number">{{ total_schools|intcomma }}</div>
-        <div class="stat-label">Total Schools</div>
+        <div class="stat-number">
+            {% if filters_active %}
+                {{ total_filtered_schools|intcomma }}
+            {% else %}
+                {{ total_schools|intcomma }}
+            {% endif %}
+        </div>
+        <div class="stat-label">
+            {% if filters_active %}Filtered{% else %}Total{% endif %} Schools
+        </div>
     </div>
     <div class="stat-card">
         <div class="stat-number">{{ total_students|intcomma }}</div>
@@ -331,14 +388,19 @@
     <div class="mb-2 mb-md-0">
         <span class="text-muted">
             <i class="fas fa-info-circle me-1"></i>
-            Showing <strong id="visibleCount">{{ page_obj|length }}</strong> of {{ page_obj.paginator.count }} schools
-            {% if page_obj.paginator.num_pages > 1 %}
-            (Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }})
+            {% if filters_active %}
+                Showing all <strong>{{ total_filtered_schools }}</strong> filtered schools
+                (re-ranked 1 to {{ total_filtered_schools }})
+            {% else %}
+                Showing <strong>{{ results|length }}</strong> of {{ total_schools }} schools
+                {% if show_pagination %}
+                (Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }})
+                {% endif %}
             {% endif %}
         </span>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-outline-success" onclick="exportTableToCSV('psle_rankings_{{ year }}.csv')">
+        <button class="btn btn-outline-success" onclick="exportTableToCSV('psle_rankings_{{ year }}{% if filters_active %}_filtered{% endif %}.csv')">
             <i class="fas fa-download me-1"></i><span class="d-none d-md-inline">Export</span> CSV
         </button>
         <button class="btn btn-outline-primary" onclick="window.print()">
@@ -365,13 +427,9 @@
                         <th width="180" class="mobile-hidden">Grade Distribution</th>
                     </tr>
                 </thead>
-                <tbody id="schoolsTableBody">
-                    {% for result in page_obj %}
-                    <tr class="{% if result.rank <= 10 %}top-school{% endif %}" 
-                        data-region="{{ result.school.region }}" 
-                        data-district="{{ result.school.district|default:'' }}"
-                        data-school-name="{{ result.school.name|lower }}"
-                        data-school-code="{{ result.school.code|lower }}">
+                <tbody>
+                    {% for result in results %}
+                    <tr class="{% if result.rank <= 10 and not filters_active %}top-school{% endif %}">
                         <td>
                             <span class="badge {% if result.rank == 1 %}bg-warning text-dark{% elif result.rank <= 3 %}bg-secondary{% elif result.rank <= 10 %}bg-primary{% else %}bg-dark text-light{% endif %}">
                                 {{ result.rank }}
@@ -437,6 +495,9 @@
                             <div class="text-muted">
                                 <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
                                 <p>No PSLE results found for {{ year }}</p>
+                                {% if filters_active %}
+                                <a href="?page=1" class="btn btn-sm btn-outline-primary mt-2">Clear Filters</a>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -447,8 +508,8 @@
     </div>
 </div>
 
-<!-- Pagination -->
-{% if page_obj.paginator.num_pages > 1 %}
+<!-- Pagination (only show when no filters are active) -->
+{% if show_pagination and page_obj.paginator.num_pages > 1 %}
 <nav aria-label="School rankings pagination" class="mt-4">
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
@@ -512,192 +573,28 @@
     </div>
 </nav>
 {% endif %}
-
-<!-- No results message -->
-<div class="alert alert-warning d-none mt-3" id="noResultsMessage">
-    <i class="fas fa-exclamation-triangle me-2"></i>No schools match your current filters on this page.
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Client-side filtering system
+    // Function to remove specific filter
+    function removeFilter(filterType) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete(filterType);
+        urlParams.delete('page'); // Go back to first page
+        window.location.href = '?' + urlParams.toString();
+    }
+
+    // Auto-submit form when region/district changes to update available districts
     document.addEventListener('DOMContentLoaded', function() {
-        // DOM Elements
         const regionFilter = document.getElementById('regionFilter');
-        const districtFilter = document.getElementById('districtFilter');
-        const searchInput = document.getElementById('searchInput');
-        const resetFilters = document.getElementById('resetFilters');
-        const schoolsTableBody = document.getElementById('schoolsTableBody');
-        const noResultsMessage = document.getElementById('noResultsMessage');
-        const visibleCount = document.getElementById('visibleCount');
-        const activeFilters = document.getElementById('activeFilters');
-        const filterIndicators = document.getElementById('filterIndicators');
-
-        // Current filter state
-        let currentFilters = {
-            region: '',
-            district: '',
-            search: ''
-        };
-
-        // Initialize filters from URL parameters if any
-        function initializeFiltersFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('region')) {
-                regionFilter.value = urlParams.get('region');
-                currentFilters.region = urlParams.get('region');
-            }
-            if (urlParams.get('district')) {
-                districtFilter.value = urlParams.get('district');
-                currentFilters.district = urlParams.get('district');
-            }
-            if (urlParams.get('search')) {
-                searchInput.value = urlParams.get('search');
-                currentFilters.search = urlParams.get('search');
-            }
-            updateActiveFiltersDisplay();
-            filterSchools();
-        }
-
-        // Filter schools based on current filters
-        function filterSchools() {
-            const rows = schoolsTableBody.querySelectorAll('tr');
-            let visibleCount = 0;
-
-            rows.forEach(row => {
-                const region = row.getAttribute('data-region') || '';
-                const district = row.getAttribute('data-district') || '';
-                const schoolName = row.getAttribute('data-school-name') || '';
-                const schoolCode = row.getAttribute('data-school-code') || '';
-
-                const matchesRegion = !currentFilters.region || region === currentFilters.region;
-                const matchesDistrict = !currentFilters.district || district === currentFilters.district;
-                const matchesSearch = !currentFilters.search || 
-                                    schoolName.includes(currentFilters.search.toLowerCase()) || 
-                                    schoolCode.includes(currentFilters.search.toLowerCase());
-
-                if (matchesRegion && matchesDistrict && matchesSearch) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-
-            // Update visible count
-            document.getElementById('visibleCount').textContent = visibleCount;
-
-            // Show/hide no results message
-            if (visibleCount === 0 && rows.length > 0) {
-                noResultsMessage.classList.remove('d-none');
-            } else {
-                noResultsMessage.classList.add('d-none');
-            }
-        }
-
-        // Update active filters display
-        function updateActiveFiltersDisplay() {
-            const activeFiltersList = [];
-            
-            if (currentFilters.region) {
-                activeFiltersList.push({
-                    type: 'region',
-                    value: currentFilters.region,
-                    display: `Region: ${currentFilters.region}`
-                });
-            }
-            
-            if (currentFilters.district) {
-                activeFiltersList.push({
-                    type: 'district',
-                    value: currentFilters.district,
-                    display: `District: ${currentFilters.district}`
-                });
-            }
-            
-            if (currentFilters.search) {
-                activeFiltersList.push({
-                    type: 'search',
-                    value: currentFilters.search,
-                    display: `Search: "${currentFilters.search}"`
-                });
-            }
-
-            // Update display
-            if (activeFiltersList.length > 0) {
-                filterIndicators.innerHTML = '';
-                activeFiltersList.forEach(filter => {
-                    const indicator = document.createElement('span');
-                    indicator.className = 'filter-indicator';
-                    indicator.innerHTML = `
-                        ${filter.display}
-                        <span class="remove" onclick="removeFilter('${filter.type}')">×</span>
-                    `;
-                    filterIndicators.appendChild(indicator);
-                });
-                activeFilters.classList.remove('d-none');
-            } else {
-                activeFilters.classList.add('d-none');
-            }
-        }
-
-        // Remove specific filter
-        window.removeFilter = function(filterType) {
-            switch(filterType) {
-                case 'region':
-                    regionFilter.value = '';
-                    currentFilters.region = '';
-                    break;
-                case 'district':
-                    districtFilter.value = '';
-                    currentFilters.district = '';
-                    break;
-                case 'search':
-                    searchInput.value = '';
-                    currentFilters.search = '';
-                    break;
-            }
-            updateActiveFiltersDisplay();
-            filterSchools();
-        };
-
-        // Event listeners for filter changes
+        const filterForm = document.getElementById('filterForm');
+        
         regionFilter.addEventListener('change', function() {
-            currentFilters.region = this.value;
-            updateActiveFiltersDisplay();
-            filterSchools();
+            // Reset to page 1 when filter changes
+            document.querySelector('input[name="page"]').value = '1';
+            filterForm.submit();
         });
-
-        districtFilter.addEventListener('change', function() {
-            currentFilters.district = this.value;
-            updateActiveFiltersDisplay();
-            filterSchools();
-        });
-
-        // Debounced search
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                currentFilters.search = this.value.toLowerCase().trim();
-                updateActiveFiltersDisplay();
-                filterSchools();
-            }, 300);
-        });
-
-        // Reset all filters
-        resetFilters.addEventListener('click', function() {
-            regionFilter.value = '';
-            districtFilter.value = '';
-            searchInput.value = '';
-            currentFilters = { region: '', district: '', search: '' };
-            updateActiveFiltersDisplay();
-            filterSchools();
-        });
-
-        // Initialize
-        initializeFiltersFromURL();
     });
 
     // Export to CSV function
