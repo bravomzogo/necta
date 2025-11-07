@@ -430,7 +430,7 @@
                 <tbody>
                     {% for result in results %}
                     <tr class="{% if result.rank <= 10 and not filters_active %}top-school{% endif %}">
-                        <td>
+                        <td style="color:black;">
                             <span class="badge {% if result.rank == 1 %}bg-warning text-dark{% elif result.rank <= 3 %}bg-secondary{% elif result.rank <= 10 %}bg-primary{% else %}bg-dark text-light{% endif %}">
                                 {{ result.rank }}
                             </span>
@@ -440,8 +440,8 @@
                                 {{ result.school.code }}
                             </span>
                         </td>
-                        <td>
-                            <a href="{% url 'psle_school_detail' result.school.id %}?year={{ year }}" class="text-decoration-none">
+                        <td style="color:black; !important">
+                            <a href="{% url 'psle_school_detail' result.school.id %}?year={{ year }}" class="text-decoration-none" style="color: #312f2fff">
                                 {{ result.school.name }}
                             </a>
                         </td>
@@ -451,7 +451,7 @@
                         <td class="mobile-hidden">
                             <span class="badge bg-secondary">{{ result.school.district|default:"-" }}</span>
                         </td>
-                        <td class="score-cell">{{ result.average_score }}</td>
+                        <td class="score-cell" style="color: #312f2fff">{{ result.average_score }}</td>
                         <td>
                             {% if "Daraja A" in result.performance_level %}
                                 <span class="performance-a">{{ result.performance_level }}</span>
@@ -467,7 +467,7 @@
                                 <span class="text-muted">{{ result.performance_level }}</span>
                             {% endif %}
                         </td>
-                        <td class="text-center fw-bold">{{ result.total }}</td>
+                        <td class="text-center fw-bold" style="color: #312f2fff">{{ result.total }}</td>
                         <td class="mobile-hidden">
                             {% if result.total > 0 %}
                             <div class="grade-distribution">
@@ -628,4 +628,4 @@
         document.body.removeChild(link);
     }
 </script>
-{% endblock %}
+{% endblock %}f
