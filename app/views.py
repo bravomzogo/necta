@@ -393,10 +393,13 @@ def psle_rankings(request, year):
     ).select_related('school').order_by('-average_score')
     
     # Get unique regions for filter
-    regions = list(School.objects.filter(
+    all_regions = list(School.objects.filter(
         school_type='Primary'
     ).values_list('region', flat=True).distinct()
     .exclude(region='Unknown').exclude(region__isnull=True).order_by('region'))
+    
+    # Filter regions to only show uppercase (no duplicates)
+    regions = [region for region in all_regions if region == region.upper()]
     
     # Get unique districts for filter
     districts = list(School.objects.filter(
@@ -425,15 +428,15 @@ def psle_rankings(request, year):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Statistics (calculate from all results, not just current page)
+    # Statistics (calculate from all results)
     total_schools = results.count()
     total_students = results.aggregate(total=Sum('total'))['total'] or 0
     avg_score = results.aggregate(avg=Avg('average_score'))['avg'] or 0
     best_score = ranked_results[0]['average_score'] if ranked_results else 0
     
     context = {
-        'page_obj': page_obj,  # Changed from 'results'
-        'results': page_obj,   # Keep for compatibility
+        'page_obj': page_obj,
+        'results': page_obj,
         'regions': regions,
         'districts': districts,
         'year': year,

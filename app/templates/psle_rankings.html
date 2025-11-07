@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% load humanize %}
-
 {% block title %}PSLE {{ year }} - School Rankings - NECTA Results{% endblock %}
-
 {% block extra_css %}
 <style>
     /* PSLE specific styles using base template's CSS variables */
@@ -10,7 +8,7 @@
         font-size: 0.9rem;
         color: var(--text-color);
     }
-    
+   
     .ranking-table th {
         background: linear-gradient(135deg, var(--accent), var(--gradient-end));
         color: #fff;
@@ -19,29 +17,29 @@
         z-index: 10;
         border-bottom: none;
     }
-    
+   
     .ranking-table td {
         border-color: var(--border-color);
     }
-    
+   
     .ranking-table tr.top-school {
         background-color: rgba(35, 134, 54, 0.15);
         transition: background-color 0.3s ease;
     }
-    
+   
     .ranking-table tr.top-school:hover {
         background-color: rgba(35, 134, 54, 0.3);
     }
-    
+   
     .ranking-table tr:hover:not(.top-school) {
         background-color: rgba(0, 0, 0, 0.03);
     }
-    
+   
     .score-cell {
         font-weight: 600;
         color: var(--accent);
     }
-    
+   
     .grade-cell {
         text-align: center;
         font-weight: 500;
@@ -59,14 +57,14 @@
         color: var(--text-color);
         text-decoration: none;
     }
-    
+   
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1rem;
         margin: 1.5rem 0;
     }
-    
+   
     .stat-card {
         padding: 1.5rem;
         text-align: center;
@@ -76,27 +74,27 @@
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    
+   
     .stat-card:hover {
         transform: translateY(-3px);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         border-color: var(--accent);
     }
-    
+   
     .stat-number {
         font-size: 1.9rem;
         font-weight: 700;
         color: var(--accent);
         margin-bottom: 0.5rem;
     }
-    
+   
     .stat-label {
         font-size: 0.8rem;
         color: var(--muted-text);
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    
+   
     .filter-card {
         padding: 1.2rem;
         margin-bottom: 1.5rem;
@@ -105,7 +103,7 @@
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    
+   
     .export-buttons {
         margin: 1.5rem 0;
     }
@@ -128,7 +126,7 @@
         overflow: hidden;
         margin-top: 2px;
     }
-    
+   
     .grade-a { background-color: #28a745; }
     .grade-b { background-color: #17a2b8; }
     .grade-c { background-color: #ffc107; }
@@ -146,15 +144,40 @@
         border: 1px solid rgba(35, 134, 54, 0.2);
     }
 
+    /* Active filter indicators */
+    .active-filter-badge {
+        background-color: var(--accent);
+        color: white;
+        font-size: 0.7rem;
+        margin-left: 5px;
+    }
+
+    .filter-indicator {
+        background: rgba(35, 134, 54, 0.1);
+        border: 1px solid var(--accent);
+        border-radius: 15px;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        margin: 2px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .filter-indicator .remove {
+        margin-left: 6px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
     /* Dark mode adjustments */
     body.dark-mode .ranking-table td {
         color: #e9ecef;
     }
-    
+   
     body.dark-mode .ranking-table td a {
         color: #e9ecef;
     }
-    
+   
     body.dark-mode .ranking-table th {
         color: #fff;
     }
@@ -162,15 +185,15 @@
     body.dark-mode .ranking-table tr:hover:not(.top-school) {
         background-color: rgba(255, 255, 255, 0.05);
     }
-    
+   
     body.dark-mode .ranking-table tr.top-school {
         background-color: rgba(35, 134, 54, 0.25);
     }
-    
+   
     body.dark-mode .ranking-table tr.top-school:hover {
         background-color: rgba(35, 134, 54, 0.4);
     }
-    
+   
     body.dark-mode .alert-warning {
         background-color: rgba(212, 167, 44, 0.2);
         border: 1px solid rgba(212, 167, 44, 0.4);
@@ -182,42 +205,42 @@
         .ranking-table {
             font-size: 0.8rem;
         }
-        
+       
         .stats-grid {
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         }
-        
+       
         .stat-number {
             font-size: 1.5rem;
         }
-        
+       
         .export-buttons {
             flex-direction: column;
             gap: 1rem;
             align-items: stretch;
         }
-        
+       
         .export-buttons > div {
             width: 100%;
             text-align: center;
         }
-        
+       
         .export-buttons .btn {
             width: 100%;
             margin: 0.25rem 0;
         }
-        
+       
         .filter-card .row {
             flex-direction: column;
         }
-        
+       
         .filter-card .col-md-3,
         .filter-card .col-md-4,
         .filter-card .col-md-5 {
             width: 100%;
             margin-bottom: 1rem;
         }
-        
+       
         /* Hide some columns on mobile */
         .mobile-hidden {
             display: none;
@@ -233,6 +256,12 @@
             <i class="fas fa-graduation-cap me-2" style="color: var(--accent);"></i>PSLE {{ year }} Rankings
         </h1>
         <p class="text-muted mb-0">Primary School Leaving Examination Results - Higher average scores are better</p>
+        
+        <!-- Active Filters Display -->
+        <div id="activeFilters" class="mt-2 d-none">
+            <small class="text-muted">Active filters:</small>
+            <div id="filterIndicators"></div>
+        </div>
     </div>
     <a href="{% url 'home' %}" class="btn btn-outline-primary">
         <i class="fas fa-arrow-left me-1"></i>Back
@@ -243,16 +272,14 @@
 <div class="filter-card">
     <div class="row">
         <div class="col-md-3 mb-2">
-    <label class="form-label">Filter by Region</label>
-    <select class="form-select" id="regionFilter">
-        <option value="">All Regions</option>
-        {% for region in regions %}
-            {% if region == region.upper %}
-            <option value="{{ region }}">{{ region }}</option>
-            {% endif %}
-        {% endfor %}
-    </select>
-</div>
+            <label class="form-label">Filter by Region</label>
+            <select class="form-select" id="regionFilter">
+                <option value="">All Regions</option>
+                {% for region in regions %}
+                <option value="{{ region }}">{{ region }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="col-md-3 mb-2">
             <label class="form-label">Filter by District</label>
             <select class="form-select" id="districtFilter">
@@ -272,7 +299,7 @@
             </div>
         </div>
         <div class="col-md-2 mb-2 d-flex align-items-end">
-            <button class="btn btn-outline-secondary w-100" id="resetFilters">
+            <button type="button" class="btn btn-outline-secondary w-100" id="resetFilters">
                 <i class="fas fa-refresh me-1"></i>Reset
             </button>
         </div>
@@ -338,9 +365,13 @@
                         <th width="180" class="mobile-hidden">Grade Distribution</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="schoolsTableBody">
                     {% for result in page_obj %}
-                    <tr class="{% if result.rank <= 10 %}top-school{% endif %}">
+                    <tr class="{% if result.rank <= 10 %}top-school{% endif %}" 
+                        data-region="{{ result.school.region }}" 
+                        data-district="{{ result.school.district|default:'' }}"
+                        data-school-name="{{ result.school.name|lower }}"
+                        data-school-code="{{ result.school.code|lower }}">
                         <td>
                             <span class="badge {% if result.rank == 1 %}bg-warning text-dark{% elif result.rank <= 3 %}bg-secondary{% elif result.rank <= 10 %}bg-primary{% else %}bg-dark text-light{% endif %}">
                                 {{ result.rank }}
@@ -472,7 +503,7 @@
             </li>
         {% endif %}
     </ul>
-    
+
     <div class="text-center text-muted mt-2">
         <small>
             Showing schools {{ page_obj.start_index }} - {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
@@ -484,83 +515,217 @@
 
 <!-- No results message -->
 <div class="alert alert-warning d-none mt-3" id="noResultsMessage">
-    <i class="fas fa-exclamation-triangle me-2"></i>No schools match your current filters.
+    <i class="fas fa-exclamation-triangle me-2"></i>No schools match your current filters on this page.
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Simplified filtering for current page only
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchInput');
-    const rows = document.querySelectorAll('.ranking-table tbody tr');
-    const noResultsMessage = document.getElementById('noResultsMessage');
-    const visibleCount = document.getElementById('visibleCount');
-    
-    function filterCurrentPage() {
-        const searchValue = searchInput.value.toLowerCase().trim();
-        let visibleRows = 0;
-        
-        rows.forEach(row => {
-            const schoolName = row.cells[2].textContent.toLowerCase().trim();
-            const schoolCode = row.cells[1].textContent.toLowerCase().trim();
-            
-            const matchesSearch = searchValue === '' || 
-                                schoolName.includes(searchValue) || 
-                                schoolCode.includes(searchValue);
-            
-            if (matchesSearch) {
-                row.style.display = '';
-                visibleRows++;
-            } else {
-                row.style.display = 'none';
+    // Client-side filtering system
+    document.addEventListener('DOMContentLoaded', function() {
+        // DOM Elements
+        const regionFilter = document.getElementById('regionFilter');
+        const districtFilter = document.getElementById('districtFilter');
+        const searchInput = document.getElementById('searchInput');
+        const resetFilters = document.getElementById('resetFilters');
+        const schoolsTableBody = document.getElementById('schoolsTableBody');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        const visibleCount = document.getElementById('visibleCount');
+        const activeFilters = document.getElementById('activeFilters');
+        const filterIndicators = document.getElementById('filterIndicators');
+
+        // Current filter state
+        let currentFilters = {
+            region: '',
+            district: '',
+            search: ''
+        };
+
+        // Initialize filters from URL parameters if any
+        function initializeFiltersFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('region')) {
+                regionFilter.value = urlParams.get('region');
+                currentFilters.region = urlParams.get('region');
             }
-        });
-        
-        // Update visible count for current page only
-        visibleCount.textContent = visibleRows;
-        
-        if (visibleRows === 0) {
-            noResultsMessage.classList.remove('d-none');
-        } else {
-            noResultsMessage.classList.add('d-none');
+            if (urlParams.get('district')) {
+                districtFilter.value = urlParams.get('district');
+                currentFilters.district = urlParams.get('district');
+            }
+            if (urlParams.get('search')) {
+                searchInput.value = urlParams.get('search');
+                currentFilters.search = urlParams.get('search');
+            }
+            updateActiveFiltersDisplay();
+            filterSchools();
         }
-    }
-    
-    searchInput.addEventListener('keyup', filterCurrentPage);
-    
-    // Initial filter to count visible rows
-    filterCurrentPage();
-});
+
+        // Filter schools based on current filters
+        function filterSchools() {
+            const rows = schoolsTableBody.querySelectorAll('tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const region = row.getAttribute('data-region') || '';
+                const district = row.getAttribute('data-district') || '';
+                const schoolName = row.getAttribute('data-school-name') || '';
+                const schoolCode = row.getAttribute('data-school-code') || '';
+
+                const matchesRegion = !currentFilters.region || region === currentFilters.region;
+                const matchesDistrict = !currentFilters.district || district === currentFilters.district;
+                const matchesSearch = !currentFilters.search || 
+                                    schoolName.includes(currentFilters.search.toLowerCase()) || 
+                                    schoolCode.includes(currentFilters.search.toLowerCase());
+
+                if (matchesRegion && matchesDistrict && matchesSearch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Update visible count
+            document.getElementById('visibleCount').textContent = visibleCount;
+
+            // Show/hide no results message
+            if (visibleCount === 0 && rows.length > 0) {
+                noResultsMessage.classList.remove('d-none');
+            } else {
+                noResultsMessage.classList.add('d-none');
+            }
+        }
+
+        // Update active filters display
+        function updateActiveFiltersDisplay() {
+            const activeFiltersList = [];
+            
+            if (currentFilters.region) {
+                activeFiltersList.push({
+                    type: 'region',
+                    value: currentFilters.region,
+                    display: `Region: ${currentFilters.region}`
+                });
+            }
+            
+            if (currentFilters.district) {
+                activeFiltersList.push({
+                    type: 'district',
+                    value: currentFilters.district,
+                    display: `District: ${currentFilters.district}`
+                });
+            }
+            
+            if (currentFilters.search) {
+                activeFiltersList.push({
+                    type: 'search',
+                    value: currentFilters.search,
+                    display: `Search: "${currentFilters.search}"`
+                });
+            }
+
+            // Update display
+            if (activeFiltersList.length > 0) {
+                filterIndicators.innerHTML = '';
+                activeFiltersList.forEach(filter => {
+                    const indicator = document.createElement('span');
+                    indicator.className = 'filter-indicator';
+                    indicator.innerHTML = `
+                        ${filter.display}
+                        <span class="remove" onclick="removeFilter('${filter.type}')">×</span>
+                    `;
+                    filterIndicators.appendChild(indicator);
+                });
+                activeFilters.classList.remove('d-none');
+            } else {
+                activeFilters.classList.add('d-none');
+            }
+        }
+
+        // Remove specific filter
+        window.removeFilter = function(filterType) {
+            switch(filterType) {
+                case 'region':
+                    regionFilter.value = '';
+                    currentFilters.region = '';
+                    break;
+                case 'district':
+                    districtFilter.value = '';
+                    currentFilters.district = '';
+                    break;
+                case 'search':
+                    searchInput.value = '';
+                    currentFilters.search = '';
+                    break;
+            }
+            updateActiveFiltersDisplay();
+            filterSchools();
+        };
+
+        // Event listeners for filter changes
+        regionFilter.addEventListener('change', function() {
+            currentFilters.region = this.value;
+            updateActiveFiltersDisplay();
+            filterSchools();
+        });
+
+        districtFilter.addEventListener('change', function() {
+            currentFilters.district = this.value;
+            updateActiveFiltersDisplay();
+            filterSchools();
+        });
+
+        // Debounced search
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentFilters.search = this.value.toLowerCase().trim();
+                updateActiveFiltersDisplay();
+                filterSchools();
+            }, 300);
+        });
+
+        // Reset all filters
+        resetFilters.addEventListener('click', function() {
+            regionFilter.value = '';
+            districtFilter.value = '';
+            searchInput.value = '';
+            currentFilters = { region: '', district: '', search: '' };
+            updateActiveFiltersDisplay();
+            filterSchools();
+        });
+
+        // Initialize
+        initializeFiltersFromURL();
+    });
 
     // Export to CSV function
     function exportTableToCSV(filename) {
         const csv = [];
         const rows = document.querySelectorAll('table tr');
-        
+       
         for (let i = 0; i < rows.length; i++) {
             const row = [], cols = rows[i].querySelectorAll('td, th');
-            
+           
             for (let j = 0; j < cols.length; j++) {
                 let text = cols[j].innerText;
-                // Handle commas in text
                 text = text.replace(/"/g, '""');
                 row.push('"' + text + '"');
             }
-            
+           
             csv.push(row.join(','));
         }
-        
-        // Download CSV file
+       
         const csvString = csv.join('\n');
         const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-        
+       
         link.setAttribute('href', url);
         link.setAttribute('download', filename);
         link.style.visibility = 'hidden';
-        
+       
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
